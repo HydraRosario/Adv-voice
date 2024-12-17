@@ -6,11 +6,15 @@ from langchain_community.document_loaders import DirectoryLoader
 from langchain_text_splitters import CharacterTextSplitter
 from langchain_chroma import Chroma
 import os
+from dotenv import load_dotenv
+
+# Cargar variables de entorno
+load_dotenv()
 
 #Transcribir audio del usuario a texto
 def transcriber(audio):
     client = Groq(
-                api_key="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"
+                api_key=os.getenv('GROQ_API_KEY')
             )
     filename = os.path.dirname(__file__) + "\\dijo el señor.wav"
     with open(filename, "rb") as file:
@@ -27,8 +31,9 @@ def transcriber(audio):
 
 #Convertir el texto de respuesta a voz
 def addVoice(text, output_file="respuesta.wav"):
-    api_key = 'sk_c41c49b087bc45b75e35785d6d071373fb0efa7c9026c240'
     voice_id = '21m00Tcm4TlvDq8ikWAM'  # Rachel voice - verified working voice ID
+    model = "eleven_multilingual_v2"
+    api_key = os.getenv('ELEVEN_LABS_API_KEY')
     url = f'https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream'
     headers = {
         'Accept': 'application/json',
@@ -36,7 +41,7 @@ def addVoice(text, output_file="respuesta.wav"):
     }
     data = {
         'text': text,
-        'model_id': 'eleven_multilingual_v2',
+        'model_id': model,
         'voice_settings': {
             'stability': 0.5,
             'similarity_boost': 0.8,
@@ -63,11 +68,14 @@ def addVoice(text, output_file="respuesta.wav"):
 
 #Obtener el clima de una ciudad
 def get_weather(location):
-    url = f"http://wttr.in/{location}?format=%C+%t"
-    response = requests.get(url)
-    if response.status_code == 200:
-        clima = response.text.strip()
-        print(clima)
-        return f"{clima} - traduce ésto al español y di la temperatura en grados centígrados, no devuelvas el °C"
-    else:
-        return "No se pudo obtener el clima."
+    try:
+        url = f"http://wttr.in/{location}?format=%C+%t"
+        response = requests.get(url)
+        if response.status_code == 200:
+            clima = response.text.strip()
+            print(clima)
+            return f"{clima} - traduce ésto al español y di la temperatura en grados centígrados, no devuelvas el °C"
+        else:
+            return "No se pudo obtener el clima."
+    except Exception as e:
+        print(f"Error al obtener el clima: {str(e)}")

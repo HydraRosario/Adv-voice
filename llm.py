@@ -1,13 +1,18 @@
 import json
 from groq import Groq
 from tools import get_weather
+from dotenv import load_dotenv
+import os
+
+# Cargar variables de entorno
+load_dotenv()
 
 class LLM():
     def __init__(self):
         pass
     def process_response(self, text):
         client = Groq(
-                    api_key="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"
+                    api_key=os.getenv('GROQ_API_KEY')
                 )
         MODEL = 'llama3-groq-70b-8192-tool-use-preview'
         messages=[

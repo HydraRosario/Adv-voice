@@ -49,6 +49,21 @@
     <script src="static/recorder.js"></script>
 
     <script type="text/javascript">
+        function playAudio(audioFile) {
+            let audio = new Audio();
+            audio.src = "/static/" + audioFile + "?t=" + new Date().getTime();
+            audio.addEventListener('error', function(e) {
+                console.error('Error loading audio:', e);
+            });
+            audio.addEventListener('loadeddata', function() {
+                console.log('Audio loaded successfully');
+                audio.play().catch(function(error) {
+                    console.error('Error playing audio:', error);
+                });
+            });
+            return audio;
+        }
+
         recorder("/audio", response => {
             document.getElementById("record").style.display="";
             document.getElementById("stop").style.display="none";
@@ -56,10 +71,7 @@
             document.getElementById("神").innerHTML = response.神;
             
             if (typeof response.file !== "undefined") {
-                audioFile = response.file;
-                let audio = new Audio();
-                audio.setAttribute("src", "static/" + audioFile + "?t=" + new Date().getTime());
-                audio.play();
+                playAudio(response.file);
                 scrollToBottom();
             }
         });

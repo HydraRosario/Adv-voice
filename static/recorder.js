@@ -97,16 +97,18 @@ function sendText() {
         .then(data => {
             document.getElementById("text").innerHTML = data.text;
             document.getElementById("神").innerHTML = data.神;
-            document.getElementById("functions_history").innerHTML = data.functions_history;
+            if (data.functions_history) {
+                document.getElementById("functions_history").innerHTML = data.functions_history;
+            }
             textInput.value = ''; // Limpiar el campo de texto
             
             if (typeof data.file !== "undefined") {
-                audioFile = data.file;
-                let audio = new Audio();
-                audio.setAttribute("src", "static/" + audioFile + "?t=" + new Date().getTime());
-                audio.play();
+                playAudio(data.file);
                 scrollToBottom();
             }
+        })
+        .catch(error => {
+            console.error('Error:', error);
         });
     }
 }

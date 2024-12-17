@@ -1,11 +1,5 @@
-import os, webbrowser, requests, urllib.parse
+import os, requests, urllib.parse
 from groq import Groq
-from bs4 import BeautifulSoup
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.document_loaders import DirectoryLoader
-from langchain_text_splitters import CharacterTextSplitter
-from langchain_chroma import Chroma
-import os
 from dotenv import load_dotenv
 
 # Cargar variables de entorno
@@ -57,14 +51,6 @@ def addVoice(text, output_file="respuesta.wav"):
         print(f"Audio guardado en {output_file}")
     else:
         print(f"Error en la solicitud: {response.status_code} - {response.text}")
-        # Fallback to local TTS if ElevenLabs fails
-        try:
-            engine = pyttsx3.init()
-            engine.save_to_file(text, output_file)
-            engine.runAndWait()
-            print(f"Audio guardado usando TTS local en {output_file}")
-        except Exception as e:
-            print(f"Error al usar TTS local: {str(e)}")
 
 #Obtener el clima de una ciudad
 def get_weather(location):

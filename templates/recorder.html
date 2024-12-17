@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Asistente Adventista</title>
+    <link rel="icon" type="image/png" href="static/img/favicon.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="static/recorder.css">
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div class="container main-container">
+        <div class="header">
+            <img src="static/img/logo-adventista.png" alt="Logo Adventista" class="logo">
+            <h1>Asistente Bíblico Digital</h1>
+            <p class="verse">"Lámpara es a mis pies tu palabra, y lumbrera a mi camino" - Salmos 119:105</p>
+        </div>
+
+        <div class="chat-section">
+            <div class="messages-container">
+                <div id="神" class="chat-box user-chat"></div>
+                <div id="text" class="chat-box assistant-chat"></div>
+            </div>
+        </div>
+
+        <div class="input-section">
+            <div class="input-container">
+                <input type="text" class="form-control message-input" id="textInput" placeholder="Escribe tu pregunta aquí...">
+                <button class="send-button" onclick="sendText()">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="send-icon">
+                        <path d="M2 21l21-9L2 3v7l15 2-15 2v7z" fill="currentColor"/>
+                    </svg>
+                </button>
+                <button type="button" class="record-button" id="record" onclick="record()">
+                    <img src="static/img/microphone.png" alt="Grabar" class="mic-icon">
+                </button>
+                <button type="button" class="stop-button" id="stop" onclick="stop()" style="display:none">
+                    <img src="static/img/stop.png" alt="Detener" id="record-stop-label"/>
+                    <span id="record-stop-loading" style="display: none">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="static/recorder.js"></script>
+
+    <script type="text/javascript">
+        recorder("/audio", response => {
+            document.getElementById("record").style.display="";
+            document.getElementById("stop").style.display="none";
+            document.getElementById("text").innerHTML = response.text;
+            document.getElementById("神").innerHTML = response.神;
+            
+            if (typeof response.file !== "undefined") {
+                audioFile = response.file;
+                let audio = new Audio();
+                audio.setAttribute("src", "static/" + audioFile + "?t=" + new Date().getTime());
+                audio.play();
+                scrollToBottom();
+            }
+        });
+    </script>
+  </body>
+</html>

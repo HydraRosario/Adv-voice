@@ -1,4 +1,4 @@
-import pyttsx3, os, webbrowser, requests, urllib.parse
+import os, webbrowser, requests, urllib.parse
 from groq import Groq
 from bs4 import BeautifulSoup
 from langchain_huggingface import HuggingFaceEmbeddings

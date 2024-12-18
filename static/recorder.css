@@ -8,6 +8,11 @@
     --chat-assistant-bg: #F5E6D3;
 }
 
+.record-button:disabled {
+    opacity: 0.6;
+    cursor: wait !important;
+}
+
 body {
     background-color: var(--background-color);
     color: var(--text-color);

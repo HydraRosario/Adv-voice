@@ -18,68 +18,61 @@ class AudioChat {
         const recordButton = document.getElementById("record");
         const stopButton = document.getElementById("stop");
         
-        if (recordButton) recordButton.disabled = true;
-        
-        try {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                throw new Error('Tu navegador no soporta la grabación de audio');
-            }
-
-            const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
-            console.log('Estado del permiso del micrófono:', permissionStatus.state);
-
-            this.stream = await navigator.mediaDevices.getUserMedia({ 
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    sampleRate: 44100
-                },
-                video: false 
-            });
-            
-            console.log('Acceso al micrófono concedido');
-            
-            this.rec = new MediaRecorder(this.stream);
-            this.blobs = [];
-            
-            this.rec.ondataavailable = (e) => {
-                console.log('Datos de audio disponibles');
-                this.blobs.push(e.data);
-            };
-            
-            this.rec.onstop = async () => {
-                console.log('Grabación detenida');
-                const blob = new Blob(this.blobs, { type: 'audio/webm' });
-                await this.sendAudio(blob);
-                this.stream.getTracks().forEach(track => track.stop());
-            };
-            
-            if (recordButton) recordButton.style.display = "none";
-            if (stopButton) stopButton.style.display = "";
-            
-            this.rec.start();
-            console.log('Grabación iniciada');
-        } catch (error) {
-            console.error('Error detallado al iniciar grabación:', error);
-            let errorMessage = 'No fue posible grabar audio';
-            
-            if (error.name === 'NotAllowedError') {
-                errorMessage = 'Permiso de micrófono denegado. Por favor, permite el acceso al micrófono.';
-            } else if (error.name === 'NotFoundError') {
-                errorMessage = 'No se encontró ningún micrófono. Por favor, conecta un micrófono.';
-            } else if (error.name === 'SecurityError') {
-                errorMessage = 'Error de seguridad. Asegúrate de estar usando HTTPS.';
-            }
-            
-            this.addMessage(`⚠️ ${errorMessage}`, false);
-            console.log('Mensaje de error mostrado:', errorMessage);
-            
-            if (recordButton) {
-                recordButton.disabled = false;
-                recordButton.style.display = "";
-            }
-            if (stopButton) stopButton.style.display = "none";
+        if (recordButton) {
+            recordButton.disabled = true;
+            recordButton.style.cursor = 'wait';
         }
+
+        requestAnimationFrame(async () => {
+            try {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Tu navegador no soporta la grabación de audio');
+                }
+
+                const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
+                console.log('Estado del permiso del micrófono:', permissionStatus.state);
+
+                this.stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        sampleRate: 44100
+                    },
+                    video: false 
+                });
+                
+                console.log('Acceso al micrófono concedido');
+                
+                this.rec = new MediaRecorder(this.stream);
+                this.blobs = [];
+                
+                this.rec.ondataavailable = (e) => {
+                    console.log('Datos de audio disponibles');
+                    this.blobs.push(e.data);
+                };
+                
+                this.rec.onstop = async () => {
+                    console.log('Grabación detenida');
+                    const blob = new Blob(this.blobs, { type: 'audio/webm' });
+                    await this.sendAudio(blob);
+                    this.stream.getTracks().forEach(track => track.stop());
+                };
+                
+                if (recordButton) recordButton.style.display = "none";
+                if (stopButton) stopButton.style.display = "";
+                
+                this.rec.start();
+                console.log('Grabación iniciada');
+            } catch (error) {
+                console.error('Error:', error);
+                this.addMessage(`⚠️ ${error.message}`, false);
+            } finally {
+                if (recordButton) {
+                    recordButton.disabled = false;
+                    recordButton.style.cursor = 'pointer';
+                }
+            }
+        });
     }
 
     async sendAudio(blob) {

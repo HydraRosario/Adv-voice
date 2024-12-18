@@ -92,11 +92,11 @@ function sendText() {
         .then(response => response.json())
         .then(data => {
             document.getElementById("text").innerHTML = data.text;
-            document.getElementById("神").innerHTML = text;
+            document.getElementById("神").innerHTML = data.神;
             
             if (data.file) {
                 let audio = new Audio();
-                audio.src = "static/" + data.file + "?t=" + new Date().getTime();
+                audio.src = data.file;
                 audio.play();
                 scrollToBottom();
             }

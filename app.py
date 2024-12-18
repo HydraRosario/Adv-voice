@@ -3,6 +3,7 @@ import os
 from flask import Flask, render_template, request, jsonify
 from tools import transcriber, addVoice
 from llm import LLM
+import cloudinary
 
 app = Flask(__name__)
 
@@ -28,9 +29,10 @@ def audio():
             args_json = json.dumps(function_args, indent=2)
             
             try:
-                addVoice(answer, "static/respuesta.wav")
+                audio_url = addVoice(answer)
             except Exception as e:
                 print(f"Error al generar audio: {str(e)}")
+                audio_url = None
             
             if answer:
                 xlr8 = f"{function_name}<br>{args_json}<br>{function_response}<br><br>"
@@ -38,9 +40,9 @@ def audio():
             
             return jsonify({
                 'result': 'ok',
-                'text': "神: " + answer,
+                'text': answer,
                 '神': 神,
-                'file': 'respuesta.wav',
+                'file': audio_url,
                 'functions_history': functions_history
             })
         else:
@@ -50,10 +52,14 @@ def audio():
                 return jsonify({'error': 'No se recibió archivo de audio'}), 400
             
             try:
-                audio_path = "static/input.wav"
-                audio.save(audio_path)
+                # Subir audio a Cloudinary
+                result = cloudinary.uploader.upload(
+                    audio,
+                    resource_type="raw",
+                    format="wav"
+                )
                 
-                text = transcriber(audio_path)
+                text = transcriber(result['secure_url'])
                 if not text:
                     return jsonify({'error': 'No se pudo transcribir el audio'}), 500
                 
@@ -61,7 +67,7 @@ def audio():
                 answer, function_args, function_response, function_name = LLM().process_response(text)
                 args_json = json.dumps(function_args, indent=2)
                 
-                addVoice(answer, "static/respuesta.wav")
+                audio_url = addVoice(answer)
                 
                 if answer:
                     xlr8 = f"{function_name}<br>{args_json}<br>{function_response}<br><br>"
@@ -69,9 +75,9 @@ def audio():
                 
                 return jsonify({
                     'result': 'ok',
-                    'text': "神: " + answer,
+                    'text': answer,
                     '神': 神,
-                    'file': 'respuesta.wav',
+                    'file': audio_url,
                     'functions_history': functions_history
                 })
             except Exception as e:

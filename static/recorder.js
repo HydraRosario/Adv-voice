@@ -189,6 +189,9 @@ function record() {
 
 function stop() {
     if (chat.rec && chat.rec.state === "recording") {
+        document.getElementById("record").style.display = "";
+        document.getElementById("stop").style.display = "none";
+        
         chat.rec.stop();
     }
 }

@@ -97,10 +97,13 @@ function handleAudioResponse(response){
 }
 
 function sendText() {
-    const textInput = document.getElementById("textInput");
+    const textInput = document.getElementById('textInput');
     const text = textInput.value.trim();
     
     if (text) {
+        // Limpiar el campo de texto inmediatamente
+        textInput.value = '';
+        
         fetch('/audio', {
             method: 'POST',
             headers: {
@@ -112,15 +115,22 @@ function sendText() {
         .then(data => {
             document.getElementById("text").innerHTML = data.text;
             document.getElementById("神").innerHTML = data.神;
-            textInput.value = ''; // Limpiar el campo de texto
             
-            if (typeof data.file !== "undefined") {
-                audioFile = data.file;
+            if (data.file) {
                 let audio = new Audio();
-                audio.setAttribute("src", "static/" + audioFile + "?t=" + new Date().getTime());
+                audio.setAttribute("src", "static/" + data.file + "?t=" + new Date().getTime());
                 audio.play();
                 scrollToBottom();
             }
-        });
+        })
+        .catch(error => console.error('Error:', error));
     }
 }
+
+// Añadir event listener para el campo de texto
+document.getElementById('text-input').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {  // Detectar cuando se presiona Enter
+        e.preventDefault();    // Prevenir el comportamiento por defecto
+        document.getElementById('send-button').click();  // Simular click en el botón de enviar
+    }
+});

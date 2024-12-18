@@ -78,6 +78,14 @@
                 scrollToBottom();
             }
         });
+
+        // Añadir event listener para enviar con Enter
+        document.getElementById('textInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendText();  // Llamar directamente a la función sendText
+            }
+        });
     </script>
   </body>
 </html>

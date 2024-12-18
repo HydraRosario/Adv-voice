@@ -7,7 +7,6 @@ let audioResponseHandler;
 function audioHandler(data) {
     const textElement = document.getElementById("text");
     const godElement = document.getElementById("神");
-    const messagesContainer = document.querySelector('.messages-container');
     
     if (textElement) textElement.innerHTML = data.text || '';
     if (godElement) godElement.innerHTML = data.神 || '';
@@ -16,14 +15,20 @@ function audioHandler(data) {
         let audio = new Audio();
         audio.crossOrigin = "anonymous";
         
-        const audioUrl = data.file.replace('/static/', '');
-        audio.src = audioUrl;
+        audio.src = data.file;
         
         audio.play()
             .then(() => {
-                console.log("Audio reproduciendo correctamente:", audioUrl);
-                if (messagesContainer) {
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                console.log("Audio reproduciendo correctamente:", data.file);
+                try {
+                    const messagesContainer = document.querySelector('.messages-container');
+                    if (messagesContainer) {
+                        setTimeout(() => {
+                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                        }, 100);
+                    }
+                } catch (e) {
+                    console.log("Error al hacer scroll:", e);
                 }
             })
             .catch(e => {
@@ -71,8 +76,9 @@ function doPreview() {
 
 function sendText() {
     const textInput = document.getElementById('textInput');
-    const text = textInput.value.trim();
+    if (!textInput) return;
     
+    const text = textInput.value.trim();
     if (text) {
         textInput.value = '';
         

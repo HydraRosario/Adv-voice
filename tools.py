@@ -10,29 +10,34 @@ def transcriber(audio):
     client = Groq(
                 api_key=os.getenv('GROQ_API_KEY')
             )
-    filename = os.path.dirname(__file__) + "\\dijo el señor.wav"
-    with open(filename, "rb") as file:
-        transcription = client.audio.transcriptions.create(
-            file=(filename, file.read()),
-            model="whisper-large-v3",
-            prompt="",
-            language="es",
-            temperature=0.0  
-        )
-    text = transcription.text
-    print('神: ', text)
-    return text
+    try:
+        with open(audio, "rb") as file:
+            transcription = client.audio.transcriptions.create(
+                file=(audio, file.read()),
+                model="whisper-large-v3",
+                prompt="",
+                language="es",
+                temperature=0.0  
+            )
+        text = transcription.text
+        print('神: ', text)
+        return text
+    except Exception as e:
+        print(f"Error en transcripción: {str(e)}")
+        return None
 
 #Convertir el texto de respuesta a voz
-def addVoice(text, output_file="respuesta.wav"):
+def addVoice(text, output_file="static/respuesta.wav"):
     try:
         import edge_tts
         import asyncio
         
         async def generate_audio():
-            # Configurar voz y velocidad
             communicate = edge_tts.Communicate(text, "es-ES-AlvaroNeural", rate="+15%")
             await communicate.save(output_file)
+        
+        # Asegurarse de que el directorio existe
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
         
         # Ejecutar la función asíncrona
         asyncio.run(generate_audio())

@@ -5,7 +5,13 @@ class AudioChat {
         this.rec = null;
         this.isPlaying = false;
         this.audioQueue = [];
-        this.messagesContainer = document.querySelector('.messages-container');
+    }
+
+    getMessagesContainer() {
+        if (!this.messagesContainer) {
+            this.messagesContainer = document.querySelector('.messages-container');
+        }
+        return this.messagesContainer;
     }
 
     async record() {
@@ -136,9 +142,12 @@ class AudioChat {
     addMessage(text, isUser = false) {
         if (!text) return;
         const messageElement = this.createMessageElement(text, isUser);
-        if (this.messagesContainer) {
-            this.messagesContainer.appendChild(messageElement);
+        const container = this.getMessagesContainer();
+        if (container) {
+            container.appendChild(messageElement);
             messageElement.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            console.error('No se encontró el contenedor de mensajes');
         }
     }
 
@@ -207,33 +216,10 @@ class AudioChat {
     }
 }
 
-// Inicializar el chat
-const chat = new AudioChat();
-
-// Funciones globales simples
-function sendText() {
-    const textInput = document.querySelector('#textInput');
-    if (textInput && textInput.value.trim()) {
-        const text = textInput.value;
-        textInput.value = '';
-        chat.sendText(text);
-    }
-}
-
-function record() {
-    chat.record();
-}
-
-function stop() {
-    if (chat.rec && chat.rec.state === "recording") {
-        document.getElementById("record").style.display = "";
-        document.getElementById("stop").style.display = "none";
-        chat.rec.stop();
-    }
-}
-
-// Event listener para Enter
+let chat;
 document.addEventListener('DOMContentLoaded', () => {
+    chat = new AudioChat();
+
     const textInput = document.querySelector('#textInput');
     if (textInput) {
         textInput.addEventListener('keypress', (e) => {
@@ -244,3 +230,36 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+function sendText() {
+    if (!chat) {
+        console.error('Chat no inicializado');
+        return;
+    }
+    const textInput = document.querySelector('#textInput');
+    if (textInput && textInput.value.trim()) {
+        const text = textInput.value;
+        textInput.value = '';
+        chat.sendText(text);
+    }
+}
+
+function record() {
+    if (!chat) {
+        console.error('Chat no inicializado');
+        return;
+    }
+    chat.record();
+}
+
+function stop() {
+    if (!chat) {
+        console.error('Chat no inicializado');
+        return;
+    }
+    if (chat.rec && chat.rec.state === "recording") {
+        document.getElementById("record").style.display = "";
+        document.getElementById("stop").style.display = "none";
+        chat.rec.stop();
+    }
+}

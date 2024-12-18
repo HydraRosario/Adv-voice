@@ -4,36 +4,51 @@ let rec;
 let recordUrl;
 let audioResponseHandler;
 
-function updateText(textElement, godElement, data) {
+function updateText(data) {
     try {
-        if (textElement && data.text) textElement.innerHTML = data.text;
-        if (godElement && data.神) godElement.innerHTML = data.神;
+        // Intentar obtener los elementos
+        const textElement = document.querySelector("#text") || document.querySelector(".text");
+        const godElement = document.querySelector("#神") || document.querySelector(".god");
+        
+        // Actualizar solo si existen
+        if (textElement && data.text) {
+            textElement.textContent = data.text;
+        }
+        if (godElement && data.神) {
+            godElement.textContent = data.神;
+        }
     } catch (e) {
         console.error('Error actualizando texto:', e);
     }
 }
 
-function playAudio(audioUrl, textElement) {
+function playAudio(audioUrl) {
     if (!audioUrl) {
         console.error('URL de audio no válida');
         return;
     }
 
+    console.log('Intentando reproducir:', audioUrl);
+    
     let audio = new Audio();
     audio.crossOrigin = "anonymous";
     
-    // Limpiar la URL si viene con /static/
-    const cleanUrl = audioUrl.replace('/static/', '');
-    audio.src = cleanUrl;
+    // Usar la URL de Cloudinary directamente
+    if (audioUrl.includes('cloudinary.com')) {
+        audio.src = audioUrl;
+    } else {
+        // Si no es una URL de Cloudinary, limpiar el prefijo /static/
+        audio.src = audioUrl.replace('/static/', '');
+    }
     
     audio.play()
         .then(() => {
-            console.log("Audio reproduciendo:", cleanUrl);
+            console.log("Audio reproduciendo:", audio.src);
             try {
-                const messagesContainer = document.querySelector('.messages-container');
-                if (messagesContainer) {
+                const container = document.querySelector('.messages-container');
+                if (container) {
                     setTimeout(() => {
-                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                        container.scrollTop = container.scrollHeight;
                     }, 100);
                 }
             } catch (e) {
@@ -42,6 +57,7 @@ function playAudio(audioUrl, textElement) {
         })
         .catch(e => {
             console.error('Error reproduciendo audio:', e);
+            const textElement = document.querySelector("#text") || document.querySelector(".text");
             if (textElement) {
                 const errorMsg = document.createElement('div');
                 errorMsg.innerHTML = '<small style="color: red;">Error al reproducir el audio. Por favor, inténtelo de nuevo.</small>';
@@ -51,15 +67,12 @@ function playAudio(audioUrl, textElement) {
 }
 
 function audioHandler(data) {
-    const textElement = document.getElementById("text");
-    const godElement = document.getElementById("神");
-    
-    // Actualizar texto de manera segura
-    updateText(textElement, godElement, data);
+    // Actualizar texto
+    updateText(data);
     
     // Reproducir audio si existe
     if (data.file) {
-        playAudio(data.file, textElement);
+        playAudio(data.file);
     }
 }
 
@@ -83,18 +96,14 @@ function doPreview() {
         body: fd
     })
     .then(response => response.json())
-    .then(data => {
-        if (audioResponseHandler) {
-            audioResponseHandler(data);
-        }
-    })
+    .then(audioHandler)
     .catch(error => {
         console.error('Error:', error);
         const elements = {
-            record: document.getElementById("record"),
-            stop: document.getElementById("stop"),
-            label: document.getElementById("record-stop-label"),
-            loading: document.getElementById("record-stop-loading")
+            record: document.querySelector("#record"),
+            stop: document.querySelector("#stop"),
+            label: document.querySelector("#record-stop-label"),
+            loading: document.querySelector("#record-stop-loading")
         };
         
         if (elements.record) elements.record.style.display = "";
@@ -105,7 +114,7 @@ function doPreview() {
 }
 
 function sendText() {
-    const textInput = document.getElementById('textInput');
+    const textInput = document.querySelector('#textInput');
     if (!textInput) {
         console.error('Elemento textInput no encontrado');
         return;

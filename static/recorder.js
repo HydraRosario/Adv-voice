@@ -7,43 +7,9 @@ class AudioChat {
         this.audioQueue = [];
         this.messagesContainer = document.querySelector('.messages-container');
         
-        // Limpiar los divs vacíos al cargar la página
-        this.cleanEmptyDivs();
-        
-        // Asegurarse de que el input se limpie al enviar
-        this.setupInputHandlers();
-    }
-
-    cleanEmptyDivs() {
+        // Inicializar con el mensaje de bienvenida
         if (this.messagesContainer) {
-            // Remover todos los divs vacíos
-            const emptyDivs = this.messagesContainer.querySelectorAll('div:empty');
-            emptyDivs.forEach(div => div.remove());
-            
-            // También limpiar divs que solo contengan espacios en blanco
-            const allDivs = this.messagesContainer.querySelectorAll('div');
-            allDivs.forEach(div => {
-                if (!div.textContent.trim()) {
-                    div.remove();
-                }
-            });
-        }
-    }
-
-    setupInputHandlers() {
-        const textInput = document.querySelector('#textInput');
-        if (textInput) {
-            // Limpiar al enviar con Enter
-            textInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const text = textInput.value.trim();
-                    if (text) {
-                        this.sendText(text);
-                        textInput.value = ''; // Limpiar después de enviar
-                    }
-                }
-            });
+            this.addMessage("¡Hola! Soy aquí para ayudarte con tus preguntas y necesidades. ¿En qué puedo ayudarte hoy?", false);
         }
     }
 
@@ -153,19 +119,20 @@ class AudioChat {
     async sendText(text) {
         if (!text.trim()) return;
         
-        // Obtener y limpiar el input
+        // Limpiar el input inmediatamente
         const textInput = document.querySelector('#textInput');
+        const textToSend = text.trim(); // Guardar el texto antes de limpiar
         if (textInput) {
-            textInput.value = ''; // Limpiar inmediatamente
+            textInput.value = '';
         }
         
-        this.addMessage(text, true);
+        this.addMessage(textToSend, true);
         
         try {
             const response = await fetch('/audio', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text })
+                body: JSON.stringify({ text: textToSend })
             });
             
             const data = await response.json();
@@ -198,7 +165,7 @@ class AudioChat {
                 console.log('Transcripción encontrada:', data.transcription);
                 this.addMessage(data.transcription, true);
             } else if (data.神) {
-                console.log('Transcripción 神 encontrada:', data.神);
+                console.log('Transcripción 神 encontrada:', data.��);
                 this.addMessage(data.神, true);
             } else if (data.userMessage) {
                 console.log('Mensaje de usuario encontrado:', data.userMessage);
@@ -237,20 +204,31 @@ class AudioChat {
     }
 }
 
-// Inicializar el chat cuando el DOM esté completamente cargado
-document.addEventListener('DOMContentLoaded', () => {
-    const chat = new AudioChat();
-});
+// Inicializar el chat cuando el DOM esté listo
+const chat = new AudioChat();
 
-// Asegurarse de que sendText use la instancia del chat
+// Función global para enviar texto
 function sendText() {
     const textInput = document.querySelector('#textInput');
     if (textInput && textInput.value.trim()) {
-        const text = textInput.value;
-        textInput.value = ''; // Limpiar inmediatamente
-        chat.sendText(text);
+        chat.sendText(textInput.value);
     }
 }
+
+// Event listener para el Enter
+document.addEventListener('DOMContentLoaded', () => {
+    const textInput = document.querySelector('#textInput');
+    if (textInput) {
+        textInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (textInput.value.trim()) {
+                    chat.sendText(textInput.value);
+                }
+            }
+        });
+    }
+});
 
 function doPreview() {
     if (chat.blobs.length) {

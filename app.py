@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 functions_history = []
 
-@app.route("/")
+@app.route("/", methods=['GET'])
 def index():
     return render_template("recorder.html")
 
@@ -22,7 +22,13 @@ def audio():
         神 = "神: " + text
         answer, function_args, function_response, function_name = LLM().process_response(text)
         args_json = json.dumps(function_args, indent=2)
-        addVoice(answer, "static/respuesta.wav")
+        
+        # Para Vercel, necesitamos manejar el almacenamiento de archivos de manera diferente
+        # Considera usar un servicio de almacenamiento como S3 o similar
+        try:
+            addVoice(answer, "/tmp/respuesta.wav")
+        except Exception as e:
+            print(f"Error al generar audio: {str(e)}")
 
         if answer:
             xlr8 = f"{function_name}<br>{args_json}<br>{function_response}<br><br>"
@@ -39,26 +45,30 @@ def audio():
         # Procesar solicitud de audio
         audio = request.files.get('audio')
         if audio:
-            audio.save("dijo el señor.wav")
-            text = transcriber("dijo el señor.wav")
-            神 = "神: " + text
-            answer, function_args, function_response, function_name = LLM().process_response(text)
-            args_json = json.dumps(function_args, indent=2)
-            addVoice(answer, "static/respuesta.wav")
+            try:
+                audio.save("/tmp/dijo el señor.wav")
+                text = transcriber("/tmp/dijo el señor.wav")
+                神 = "神: " + text
+                answer, function_args, function_response, function_name = LLM().process_response(text)
+                args_json = json.dumps(function_args, indent=2)
+                addVoice(answer, "/tmp/respuesta.wav")
 
-            if answer:
-                xlr8 = f"{function_name}<br>{args_json}<br>{function_response}<br><br>"
-                functions_history.append(xlr8)
-            
-            return jsonify({
-                'result': 'ok',
-                'text': answer,
-                '神': 神,
-                'file': 'respuesta.wav',
-                'functions_history': functions_history
-            })
+                if answer:
+                    xlr8 = f"{function_name}<br>{args_json}<br>{function_response}<br><br>"
+                    functions_history.append(xlr8)
+                
+                return jsonify({
+                    'result': 'ok',
+                    'text': answer,
+                    '神': 神,
+                    'file': 'respuesta.wav',
+                    'functions_history': functions_history
+                })
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
         else:
             return jsonify({'error': 'No se recibió archivo de audio'}), 400
 
+# Importante: no uses app.run() en producción
 if __name__ == "__main__":
     app.run(debug=True)

@@ -17,7 +17,10 @@ def index():
 
 @app.route("/audio", methods=["POST", "OPTIONS"])
 def audio():
-    print("Recibiendo petición en /audio")
+    print(f"Request Headers: {request.headers}")
+    print(f"Request Method: {request.method}")
+    print(f"Request URL: {request.url}")
+    
     if request.method == "OPTIONS":
         response = make_response()
         response.headers.add("Access-Control-Allow-Origin", "*")
@@ -27,6 +30,7 @@ def audio():
 
     try:
         if request.is_json:
+            print("JSON Data:", request.get_json())
             print("Procesando solicitud JSON")
             data = request.get_json()
             text = data.get('text', '')

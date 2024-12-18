@@ -189,15 +189,17 @@ class AudioChat {
         if (!text.trim()) return;
         
         try {
-            console.log('Intentando enviar texto:', text);
+            console.log('URL de la petición:', window.location.origin + '/audio');
             this.addMessage(text, true);
             
             const response = await fetch('/audio', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Origin': window.location.origin
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify({ text })
             });
             

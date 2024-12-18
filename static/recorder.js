@@ -4,26 +4,42 @@ let rec;
 let recordUrl;
 let audioResponseHandler;
 
+function audioHandler(data) {
+    // Verificar que los elementos existen antes de modificarlos
+    const textElement = document.getElementById("text");
+    const godElement = document.getElementById("神");
+    
+    if (textElement) textElement.innerHTML = data.text || '';
+    if (godElement) godElement.innerHTML = data.神 || '';
+    
+    if (data.file) {
+        let audio = new Audio();
+        audio.crossOrigin = "anonymous";  // Permitir CORS
+        audio.src = data.file;
+        
+        // Intentar reproducir el audio
+        audio.play()
+            .then(() => {
+                console.log("Audio reproduciendo correctamente");
+                try {
+                    scrollToBottom();
+                } catch (e) {
+                    console.log("Error al hacer scroll:", e);
+                }
+            })
+            .catch(e => {
+                console.error('Error reproduciendo audio:', e);
+                // Intentar reproducir de nuevo después de un momento
+                setTimeout(() => {
+                    audio.play().catch(e => console.error('Segundo intento fallido:', e));
+                }, 1000);
+            });
+    }
+}
+
 function recorder(url, handler) {
     recordUrl = url;
-    audioResponseHandler = function(data) {
-        document.getElementById("text").innerHTML = data.text;
-        document.getElementById("神").innerHTML = data.神;
-        
-        if (data.file) {
-            let audio = new Audio();
-            audio.src = data.file;  // URL directa de Cloudinary
-            audio.play()
-                .then(() => {
-                    try {
-                        scrollToBottom();
-                    } catch (e) {
-                        console.log("Error al hacer scroll:", e);
-                    }
-                })
-                .catch(e => console.error('Error reproduciendo audio:', e));
-        }
-    };
+    audioResponseHandler = audioHandler;
 }
 
 function scrollToBottom() {
@@ -113,24 +129,7 @@ function sendText() {
             body: JSON.stringify({ text: text })
         })
         .then(response => response.json())
-        .then(data => {
-            document.getElementById("text").innerHTML = data.text;
-            document.getElementById("神").innerHTML = data.神;
-            
-            if (data.file) {
-                let audio = new Audio();
-                audio.src = data.file;  // URL directa de Cloudinary
-                audio.play()
-                    .then(() => {
-                        try {
-                            scrollToBottom();
-                        } catch (e) {
-                            console.log("Error al hacer scroll:", e);
-                        }
-                    })
-                    .catch(e => console.error('Error reproduciendo audio:', e));
-            }
-        })
+        .then(audioHandler)
         .catch(error => console.error('Error:', error));
     }
 }

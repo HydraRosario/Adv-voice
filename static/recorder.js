@@ -20,20 +20,36 @@ class AudioChat {
                 throw new Error('Tu navegador no soporta la grabación de audio');
             }
 
+            // Primero verificamos si ya tenemos permiso
+            const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
+            console.log('Estado del permiso del micrófono:', permissionStatus.state);
+
+            // Solicitar acceso al micrófono de manera explícita
             this.stream = await navigator.mediaDevices.getUserMedia({ 
-                audio: true,
-                video: false
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    sampleRate: 44100
+                },
+                video: false 
             });
             
-            this.rec = new MediaRecorder(this.stream);
+            console.log('Acceso al micrófono concedido');
+            
+            this.rec = new MediaRecorder(this.stream, {
+                mimeType: 'audio/webm'
+            });
+            
             this.blobs = [];
             
             this.rec.ondataavailable = (e) => {
+                console.log('Datos de audio disponibles');
                 this.blobs.push(e.data);
             };
             
             this.rec.onstop = async () => {
-                const blob = new Blob(this.blobs, { type: 'audio/wav' });
+                console.log('Grabación detenida');
+                const blob = new Blob(this.blobs, { type: 'audio/webm' });
                 await this.sendAudio(blob);
                 this.stream.getTracks().forEach(track => track.stop());
             };
@@ -41,17 +57,21 @@ class AudioChat {
             document.getElementById("record").style.display = "none";
             document.getElementById("stop").style.display = "";
             this.rec.start();
+            console.log('Grabación iniciada');
         } catch (error) {
-            console.error('Error al iniciar grabación:', error);
+            console.error('Error detallado al iniciar grabación:', error);
             let errorMessage = 'No fue posible grabar audio';
             
             if (error.name === 'NotAllowedError') {
-                errorMessage = 'Permiso de micrófono denegado. Por favor, permite el acceso al micrófono.';
+                errorMessage = 'Permiso de micrófono denegado. Por favor, permite el acceso al micrófono en la configuración de tu navegador.';
             } else if (error.name === 'NotFoundError') {
                 errorMessage = 'No se encontró ningún micrófono. Por favor, conecta un micrófono.';
+            } else if (error.name === 'SecurityError') {
+                errorMessage = 'Error de seguridad. Asegúrate de estar usando HTTPS.';
             }
             
             this.addMessage(`⚠️ ${errorMessage}`, false);
+            console.log('Mensaje de error mostrado:', errorMessage);
             
             document.getElementById("record").style.display = "";
             document.getElementById("stop").style.display = "none";

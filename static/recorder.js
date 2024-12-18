@@ -3,23 +3,32 @@ let stream;
 let rec;
 let recordUrl;
 let audioResponseHandler;
-let chatHistory = [];
 
 function recorder(url, handler) {
     recordUrl = url;
-    if (typeof handler !== "undefined") {
-        audioResponseHandler = handler;
-    }
+    audioResponseHandler = function(data) {
+        document.getElementById("record-stop-loading").style.display = "none";
+        document.getElementById("record").style.display = "";
+        
+        document.getElementById("text").innerHTML = data.text;
+        document.getElementById("神").innerHTML = data.神;
+        
+        if (data.file) {
+            let audio = new Audio(data.file);
+            audio.play().catch(e => console.error('Error reproduciendo audio:', e));
+            scrollToBottom();
+        }
+    };
 }
 
 async function record() {
     try {
         document.getElementById("神").innerHTML = "<i>Grabando...</i>";
-        document.getElementById("record").style.display="none";
-        document.getElementById("stop").style.display="";
-        document.getElementById("record-stop-label").style.display="block";
-        document.getElementById("record-stop-loading").style.display="none";
-        document.getElementById("stop").disabled=false;
+        document.getElementById("record").style.display = "none";
+        document.getElementById("stop").style.display = "";
+        document.getElementById("record-stop-label").style.display = "block";
+        document.getElementById("record-stop-loading").style.display = "none";
+        document.getElementById("stop").disabled = false;
 
         blobs = [];
 
@@ -35,42 +44,47 @@ async function record() {
         rec.start();
     } catch (e) {
         alert("No fue posible grabar audio.");
-    }
-}
-
-function scrollToBottom() {
-    var chatBox = document.querySelector('.messages-container');
-    if (chatBox) {
-        chatBox.scrollTop = chatBox.scrollHeight;
+        document.getElementById("record").style.display = "";
+        document.getElementById("stop").style.display = "none";
+        document.getElementById("record-stop-label").style.display = "none";
+        document.getElementById("record-stop-loading").style.display = "none";
     }
 }
 
 function doPreview() {
     if (!blobs.length) {
         console.log("No hay blobs!");
-    } else {
-        const blob = new Blob(blobs);
-        var fd = new FormData();
-        fd.append("audio", blob, "audio");
-
-        fetch(recordUrl + "?t=" + new Date().getTime(), {
-            method: "POST",
-            body: fd
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (audioResponseHandler) {
-                audioResponseHandler(data);
-            }
-        })
-        .catch(error => console.error('Error:', error));
+        return;
     }
+    
+    const blob = new Blob(blobs);
+    var fd = new FormData();
+    fd.append("audio", blob, "audio");
+
+    fetch(recordUrl, {
+        method: "POST",
+        body: fd
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (audioResponseHandler) {
+            audioResponseHandler(data);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById("record").style.display = "";
+        document.getElementById("stop").style.display = "none";
+        document.getElementById("record-stop-label").style.display = "none";
+        document.getElementById("record-stop-loading").style.display = "none";
+    });
 }
 
 function stop() {
-    document.getElementById("record-stop-label").style.display="none";
-    document.getElementById("record-stop-loading").style.display="block";
-    document.getElementById("stop").disabled=true;
+    document.getElementById("record-stop-label").style.display = "none";
+    document.getElementById("record-stop-loading").style.display = "block";
+    document.getElementById("stop").style.display = "none";
+    document.getElementById("stop").disabled = true;
     rec.stop();
     stream.getTracks().forEach(track => track.stop());
 }
@@ -95,13 +109,19 @@ function sendText() {
             document.getElementById("神").innerHTML = data.神;
             
             if (data.file) {
-                let audio = new Audio();
-                audio.src = data.file;
-                audio.play();
+                let audio = new Audio(data.file);  // URL directa de Cloudinary
+                audio.play().catch(e => console.error('Error reproduciendo audio:', e));
                 scrollToBottom();
             }
         })
         .catch(error => console.error('Error:', error));
+    }
+}
+
+function scrollToBottom() {
+    const messagesContainer = document.querySelector('.messages-container');
+    if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 }
 

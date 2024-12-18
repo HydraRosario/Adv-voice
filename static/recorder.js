@@ -15,16 +15,19 @@ class AudioChat {
     }
 
     async record() {
+        const recordButton = document.getElementById("record");
+        const stopButton = document.getElementById("stop");
+        
+        if (recordButton) recordButton.disabled = true;
+        
         try {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 throw new Error('Tu navegador no soporta la grabación de audio');
             }
 
-            // Primero verificamos si ya tenemos permiso
             const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
             console.log('Estado del permiso del micrófono:', permissionStatus.state);
 
-            // Solicitar acceso al micrófono de manera explícita
             this.stream = await navigator.mediaDevices.getUserMedia({ 
                 audio: {
                     echoCancellation: true,
@@ -36,10 +39,7 @@ class AudioChat {
             
             console.log('Acceso al micrófono concedido');
             
-            this.rec = new MediaRecorder(this.stream, {
-                mimeType: 'audio/webm'
-            });
-            
+            this.rec = new MediaRecorder(this.stream);
             this.blobs = [];
             
             this.rec.ondataavailable = (e) => {
@@ -54,8 +54,9 @@ class AudioChat {
                 this.stream.getTracks().forEach(track => track.stop());
             };
             
-            document.getElementById("record").style.display = "none";
-            document.getElementById("stop").style.display = "";
+            if (recordButton) recordButton.style.display = "none";
+            if (stopButton) stopButton.style.display = "";
+            
             this.rec.start();
             console.log('Grabación iniciada');
         } catch (error) {
@@ -63,7 +64,7 @@ class AudioChat {
             let errorMessage = 'No fue posible grabar audio';
             
             if (error.name === 'NotAllowedError') {
-                errorMessage = 'Permiso de micrófono denegado. Por favor, permite el acceso al micrófono en la configuración de tu navegador.';
+                errorMessage = 'Permiso de micrófono denegado. Por favor, permite el acceso al micrófono.';
             } else if (error.name === 'NotFoundError') {
                 errorMessage = 'No se encontró ningún micrófono. Por favor, conecta un micrófono.';
             } else if (error.name === 'SecurityError') {
@@ -73,8 +74,11 @@ class AudioChat {
             this.addMessage(`⚠️ ${errorMessage}`, false);
             console.log('Mensaje de error mostrado:', errorMessage);
             
-            document.getElementById("record").style.display = "";
-            document.getElementById("stop").style.display = "none";
+            if (recordButton) {
+                recordButton.disabled = false;
+                recordButton.style.display = "";
+            }
+            if (stopButton) stopButton.style.display = "none";
         }
     }
 
@@ -270,19 +274,21 @@ function initChat() {
 document.addEventListener('DOMContentLoaded', initChat);
 
 function sendText() {
+    if (!chat) return;
+    
+    const textInput = document.querySelector('#textInput');
+    const sendButton = document.querySelector('.send-button');
+    
+    if (sendButton) sendButton.disabled = true;
+    
     try {
-        if (!chat) {
-            console.error('Chat no inicializado, intentando inicializar...');
-            initChat();
-        }
-        const textInput = document.querySelector('#textInput');
-        if (textInput && textInput.value.trim()) {
+        if (textInput?.value?.trim()) {
             const text = textInput.value;
             textInput.value = '';
             chat.sendText(text);
         }
-    } catch (error) {
-        console.error('Error al enviar texto:', error);
+    } finally {
+        if (sendButton) sendButton.disabled = false;
     }
 }
 
@@ -295,13 +301,22 @@ function record() {
 }
 
 function stop() {
-    if (!chat) {
-        console.error('Chat no inicializado');
-        return;
-    }
-    if (chat.rec && chat.rec.state === "recording") {
-        document.getElementById("record").style.display = "";
-        document.getElementById("stop").style.display = "none";
-        chat.rec.stop();
+    if (!chat) return;
+    
+    const recordButton = document.getElementById("record");
+    const stopButton = document.getElementById("stop");
+    
+    if (stopButton) stopButton.disabled = true;
+    
+    try {
+        if (chat.rec?.state === "recording") {
+            chat.rec.stop();
+        }
+    } finally {
+        if (recordButton) recordButton.style.display = "";
+        if (stopButton) {
+            stopButton.style.display = "none";
+            stopButton.disabled = false;
+        }
     }
 }

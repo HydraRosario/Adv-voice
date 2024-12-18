@@ -176,13 +176,7 @@ class AudioChat {
         return messageDiv;
     }
 
-    async sendText() {
-        const textInput = document.querySelector('#textInput');
-        if (!textInput || !textInput.value.trim()) return;
-        
-        const text = textInput.value;
-        textInput.value = '';
-        
+    async sendText(text) {
         try {
             this.addMessage(text, true);
             
@@ -218,37 +212,37 @@ class AudioChat {
 // Inicializar el chat
 const chat = new AudioChat();
 
-// Event listeners
+// Funciones globales
+function sendText() {
+    const textInput = document.querySelector('#textInput');
+    if (textInput && textInput.value.trim()) {
+        const text = textInput.value;
+        textInput.value = '';
+        chat.sendText(text);
+    }
+}
+
+function record() {
+    chat.record();
+}
+
+function stop() {
+    if (chat.rec && chat.rec.state === "recording") {
+        document.getElementById("record").style.display = "";
+        document.getElementById("stop").style.display = "none";
+        chat.rec.stop();
+    }
+}
+
+// Event listener para Enter
 document.addEventListener('DOMContentLoaded', () => {
     const textInput = document.querySelector('#textInput');
-    const recordButton = document.getElementById('record');
-    const stopButton = document.getElementById('stop');
-    const sendButton = document.querySelector('.send-button');
-
     if (textInput) {
         textInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                chat.sendText();
+                sendText();
             }
         });
-    }
-
-    if (recordButton) {
-        recordButton.addEventListener('click', () => chat.record());
-    }
-
-    if (stopButton) {
-        stopButton.addEventListener('click', () => {
-            if (chat.rec && chat.rec.state === "recording") {
-                chat.rec.stop();
-                recordButton.style.display = "";
-                stopButton.style.display = "none";
-            }
-        });
-    }
-
-    if (sendButton) {
-        sendButton.addEventListener('click', () => chat.sendText());
     }
 });

@@ -25,13 +25,13 @@
         <div class="input-section">
             <div class="input-container">
                 <input type="text" class="form-control message-input" id="textInput" placeholder="Escribe tu pregunta aquí..." aria-label="Campo de texto para escribir mensaje">
-                <button class="send-button" aria-label="Enviar mensaje">
+                <button class="send-button" onclick="sendText()" aria-label="Enviar mensaje">
                     ➤
                 </button>
-                <button type="button" class="record-button" id="record" aria-label="Iniciar grabación de audio">
+                <button type="button" class="record-button" id="record" onclick="record()" aria-label="Iniciar grabación de audio">
                     🎤
                 </button>
-                <button type="button" class="stop-button" id="stop" style="display:none" aria-label="Detener grabación">
+                <button type="button" class="stop-button" id="stop" onclick="stop()" style="display:none" aria-label="Detener grabación">
                     ⏹️
                 </button>
             </div>

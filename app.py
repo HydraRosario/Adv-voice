@@ -4,8 +4,10 @@ from flask import Flask, render_template, request, jsonify
 from tools import transcriber, addVoice
 from llm import LLM
 import cloudinary
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 functions_history = []
 

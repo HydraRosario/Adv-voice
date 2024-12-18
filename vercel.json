@@ -17,22 +17,22 @@
         },
         {
             "src": "/audio",
-            "methods": ["POST"],
-            "dest": "app.py"
-        },
-        {
-            "src": "/transcribe_audio",
-            "methods": ["POST"],
-            "dest": "app.py"
-        },
-        {
-            "src": "/process_text",
-            "methods": ["POST"],
+            "methods": ["POST", "OPTIONS"],
             "dest": "app.py"
         },
         {
             "src": "/(.*)",
             "dest": "app.py"
+        }
+    ],
+    "headers": [
+        {
+            "source": "/(.*)",
+            "headers": [
+                { "key": "Access-Control-Allow-Origin", "value": "*" },
+                { "key": "Access-Control-Allow-Methods", "value": "GET,POST,OPTIONS" },
+                { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
+            ]
         }
     ]
 }

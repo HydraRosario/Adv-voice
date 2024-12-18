@@ -41,23 +41,37 @@ class AudioChat {
         fd.append("audio", blob, "audio");
         
         try {
-            const response = await fetch('/audio', {
+            // Primera petición: solo para transcribir
+            const transcriptionResponse = await fetch('/transcribe_audio', {
                 method: "POST",
                 body: fd
             });
             
-            const data = await response.json();
+            const transcriptionData = await transcriptionResponse.json();
             
-            if (data.神 && data.神.trim()) {
-                this.addMessage(data.神, true);
+            // Mostramos la transcripción inmediatamente
+            if (transcriptionData.transcription) {
+                this.addMessage(transcriptionData.transcription, true);
             }
             
-            if (data.text && data.text.trim()) {
-                this.addMessage(data.text, false);
+            // Segunda petición: para obtener la respuesta del modelo
+            const modelResponse = await fetch('/process_text', {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text: transcriptionData.transcription })
+            });
+            
+            const modelData = await modelResponse.json();
+            
+            // Mostramos la respuesta del modelo
+            if (modelData.text) {
+                this.addMessage(modelData.text, false);
             }
             
-            if (data.file) {
-                await this.playAudio(data.file);
+            if (modelData.file) {
+                await this.playAudio(modelData.file);
             }
             
             document.getElementById("record").style.display = "";

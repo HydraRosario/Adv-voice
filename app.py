@@ -59,12 +59,11 @@ def audio():
                     format="wav"
                 )
                 
-                text = transcriber(result['secure_url'])
-                if not text:
+                transcription = transcriber(result['secure_url'])
+                if not transcription:
                     return jsonify({'error': 'No se pudo transcribir el audio'}), 500
                 
-                神 = text
-                answer, function_args, function_response, function_name = LLM().process_response(text)
+                answer, function_args, function_response, function_name = LLM().process_response(transcription)
                 args_json = json.dumps(function_args, indent=2)
                 
                 audio_url = addVoice(answer)
@@ -75,8 +74,8 @@ def audio():
                 
                 return jsonify({
                     'result': 'ok',
+                    'transcription': transcription,
                     'text': answer,
-                    '神': 神,
                     'file': audio_url,
                     'functions_history': functions_history
                 })
@@ -86,6 +85,59 @@ def audio():
     except Exception as e:
         print(f"Error general: {str(e)}")
         return jsonify({'error': 'Error interno del servidor'}), 500
+
+@app.route("/transcribe_audio", methods=["POST"])
+def transcribe_audio():
+    try:
+        audio = request.files.get('audio')
+        if not audio:
+            return jsonify({'error': 'No se recibió archivo de audio'}), 400
+        
+        # Subir audio a Cloudinary
+        result = cloudinary.uploader.upload(
+            audio,
+            resource_type="raw",
+            format="wav"
+        )
+        
+        transcription = transcriber(result['secure_url'])
+        if not transcription:
+            return jsonify({'error': 'No se pudo transcribir el audio'}), 500
+        
+        return jsonify({
+            'result': 'ok',
+            'transcription': transcription
+        })
+    except Exception as e:
+        print(f"Error transcribiendo audio: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route("/process_text", methods=["POST"])
+def process_text():
+    try:
+        data = request.get_json()
+        text = data.get('text', '')
+        if not text:
+            return jsonify({'error': 'No se recibió texto'}), 400
+        
+        answer, function_args, function_response, function_name = LLM().process_response(text)
+        args_json = json.dumps(function_args, indent=2)
+        
+        audio_url = addVoice(answer)
+        
+        if answer:
+            xlr8 = f"{function_name}<br>{args_json}<br>{function_response}<br><br>"
+            functions_history.append(xlr8)
+        
+        return jsonify({
+            'result': 'ok',
+            'text': answer,
+            'file': audio_url,
+            'functions_history': functions_history
+        })
+    except Exception as e:
+        print(f"Error procesando texto: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)

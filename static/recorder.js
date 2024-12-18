@@ -7,61 +7,43 @@ class AudioChat {
         this.audioQueue = [];
         this.messagesContainer = document.querySelector('.messages-container');
         
-        // Limpiar los divs vacíos iniciales
+        // Limpiar los divs vacíos al cargar la página
+        this.cleanEmptyDivs();
+        
+        // Asegurarse de que el input se limpie al enviar
+        this.setupInputHandlers();
+    }
+
+    cleanEmptyDivs() {
         if (this.messagesContainer) {
+            // Remover todos los divs vacíos
             const emptyDivs = this.messagesContainer.querySelectorAll('div:empty');
             emptyDivs.forEach(div => div.remove());
             
-            // Aplicar estilos mejorados al contenedor de mensajes
-            this.messagesContainer.style.cssText = `
-                flex: 1;
-                overflow-y: auto;
-                padding: 20px;
-                background-color: rgba(245, 235, 220, 0.95);
-                border-radius: 15px;
-                margin: 0 20px;
-                backdrop-filter: blur(10px);
-                scrollbar-width: thin;
-                scrollbar-color: #e3c19b transparent;
-            `;
+            // También limpiar divs que solo contengan espacios en blanco
+            const allDivs = this.messagesContainer.querySelectorAll('div');
+            allDivs.forEach(div => {
+                if (!div.textContent.trim()) {
+                    div.remove();
+                }
+            });
+        }
+    }
 
-            // Obtener el contenedor padre
-            const chatSection = document.querySelector('.chat-section');
-            if (chatSection) {
-                chatSection.style.cssText = `
-                    background: linear-gradient(45deg, #4a1942 0%, #7e3f1d 100%);
-                    border-radius: 15px;
-                    padding: 20px;
-                    margin: 20px 0;
-                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-                    display: flex;
-                    flex-direction: column;
-                    gap: 0;
-                    height: 350px;
-                `;
-            }
-
-            // Ajustar el contenedor de input
-            const inputSection = document.querySelector('.input-section');
-            if (inputSection) {
-                inputSection.style.cssText = `
-                    background: linear-gradient(45deg, #4a1942 0%, #7e3f1d 100%);
-                    border-radius: 15px;
-                    padding: 15px;
-                    margin-top: -15px;
-                `;
-            }
-
-            // Ajustar el contenedor del input
-            const inputContainer = document.querySelector('.input-container');
-            if (inputContainer) {
-                inputContainer.style.cssText = `
-                    display: flex;
-                    gap: 10px;
-                    align-items: center;
-                    padding: 0 5px;
-                `;
-            }
+    setupInputHandlers() {
+        const textInput = document.querySelector('#textInput');
+        if (textInput) {
+            // Limpiar al enviar con Enter
+            textInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const text = textInput.value.trim();
+                    if (text) {
+                        this.sendText(text);
+                        textInput.value = ''; // Limpiar después de enviar
+                    }
+                }
+            });
         }
     }
 
@@ -171,6 +153,12 @@ class AudioChat {
     async sendText(text) {
         if (!text.trim()) return;
         
+        // Obtener y limpiar el input
+        const textInput = document.querySelector('#textInput');
+        if (textInput) {
+            textInput.value = ''; // Limpiar inmediatamente
+        }
+        
         this.addMessage(text, true);
         
         try {
@@ -249,15 +237,17 @@ class AudioChat {
     }
 }
 
-// Inicializar
-const chat = new AudioChat();
+// Inicializar el chat cuando el DOM esté completamente cargado
+document.addEventListener('DOMContentLoaded', () => {
+    const chat = new AudioChat();
+});
 
-// Funciones globales
+// Asegurarse de que sendText use la instancia del chat
 function sendText() {
-    const input = document.querySelector('#textInput');
-    if (input && input.value.trim()) {
-        const text = input.value;
-        input.value = '';
+    const textInput = document.querySelector('#textInput');
+    if (textInput && textInput.value.trim()) {
+        const text = textInput.value;
+        textInput.value = ''; // Limpiar inmediatamente
         chat.sendText(text);
     }
 }
@@ -293,15 +283,3 @@ function stop() {
     chat.blobs = [];
     setTimeout(doPreview, 1000);
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    const input = document.querySelector('#textInput');
-    if (input) {
-        input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                sendText();
-            }
-        });
-    }
-});

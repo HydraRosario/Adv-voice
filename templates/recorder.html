@@ -26,13 +26,13 @@
             <div class="input-container">
                 <input type="text" class="form-control message-input" id="textInput" placeholder="Escribe tu pregunta aquí..." aria-label="Campo de texto para escribir mensaje">
                 <button class="send-button" onclick="sendText()" aria-label="Enviar mensaje">
-                    Enviar
+                    ➤
                 </button>
                 <button type="button" class="record-button" id="record" onclick="record()" aria-label="Iniciar grabación de audio">
-                    Grabar
+                    🎤
                 </button>
                 <button type="button" class="stop-button" id="stop" onclick="stop()" style="display:none" aria-label="Detener grabación">
-                    Detener
+                    ⏹️
                 </button>
             </div>
         </div>
@@ -72,5 +72,25 @@
             }
         });
     </script>
+
+    <style>
+        .send-button, .mic-button, .stop-button {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 50%;
+            background-color: #e3c19b;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+            font-size: 20px;
+        }
+
+        .send-button:hover, .mic-button:hover {
+            background-color: #d4b08c;
+        }
+    </style>
   </body>
 </html>

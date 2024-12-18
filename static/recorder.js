@@ -10,19 +10,16 @@ class AudioChat {
 
     async record() {
         try {
-            // Primero verificamos si el navegador soporta la API de MediaDevices
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 throw new Error('Tu navegador no soporta la grabación de audio');
             }
 
-            // Solicitamos permisos explícitamente primero
-            const stream = await navigator.mediaDevices.getUserMedia({ 
+            this.stream = await navigator.mediaDevices.getUserMedia({ 
                 audio: true,
-                video: false // Explícitamente negamos el video
+                video: false
             });
-
-            this.stream = stream;
-            this.rec = new MediaRecorder(stream);
+            
+            this.rec = new MediaRecorder(this.stream);
             this.blobs = [];
             
             this.rec.ondataavailable = (e) => {
@@ -30,7 +27,7 @@ class AudioChat {
             };
             
             this.rec.onstop = async () => {
-                const blob = new Blob(this.blobs, { type: 'audio/wav' }); // Especificamos el tipo
+                const blob = new Blob(this.blobs, { type: 'audio/wav' });
                 await this.sendAudio(blob);
                 this.stream.getTracks().forEach(track => track.stop());
             };
@@ -42,7 +39,6 @@ class AudioChat {
             console.error('Error al iniciar grabación:', error);
             let errorMessage = 'No fue posible grabar audio';
             
-            // Mensajes más específicos según el error
             if (error.name === 'NotAllowedError') {
                 errorMessage = 'Permiso de micrófono denegado. Por favor, permite el acceso al micrófono.';
             } else if (error.name === 'NotFoundError') {
@@ -177,6 +173,8 @@ class AudioChat {
     }
 
     async sendText(text) {
+        if (!text.trim()) return;
+        
         try {
             this.addMessage(text, true);
             
@@ -212,7 +210,7 @@ class AudioChat {
 // Inicializar el chat
 const chat = new AudioChat();
 
-// Funciones globales
+// Funciones globales simples
 function sendText() {
     const textInput = document.querySelector('#textInput');
     if (textInput && textInput.value.trim()) {

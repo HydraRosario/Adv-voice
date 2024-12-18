@@ -1,6 +1,6 @@
 import json
 import os
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, make_response
 from tools import transcriber, addVoice
 from llm import LLM
 import cloudinary
@@ -15,8 +15,16 @@ functions_history = []
 def index():
     return render_template("recorder.html")
 
-@app.route("/audio", methods=["POST"])
+@app.route("/audio", methods=["POST", "OPTIONS"])
 def audio():
+    # Manejar preflight CORS
+    if request.method == "OPTIONS":
+        response = make_response()
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST")
+        return response
+
     try:
         if request.is_json:
             # Procesar solicitud de texto
@@ -140,6 +148,10 @@ def process_text():
     except Exception as e:
         print(f"Error procesando texto: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@app.route("/health", methods=["GET"])
+def health_check():
+    return jsonify({"status": "healthy"}), 200
 
 if __name__ == "__main__":
     app.run(debug=True)

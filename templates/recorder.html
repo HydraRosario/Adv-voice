@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600&display=swap" rel="stylesheet">
   </head>
   <body>
-    <div class="container main-container">
+    <main class="container main-container">
         <div class="header">
             <img src="static/img/logo-adventista.png" alt="Logo Adventista" class="logo">
             <h1>Asistente Bíblico Digital</h1>
@@ -25,53 +25,21 @@
         <div class="input-section">
             <div class="input-container">
                 <input type="text" class="form-control message-input" id="textInput" placeholder="Escribe tu pregunta aquí..." aria-label="Campo de texto para escribir mensaje">
-                <button class="send-button" onclick="sendText()" aria-label="Enviar mensaje">
+                <button class="send-button" aria-label="Enviar mensaje">
                     ➤
                 </button>
-                <button type="button" class="record-button" id="record" onclick="record()" aria-label="Iniciar grabación de audio">
+                <button type="button" class="record-button" id="record" aria-label="Iniciar grabación de audio">
                     🎤
                 </button>
-                <button type="button" class="stop-button" id="stop" onclick="stop()" style="display:none" aria-label="Detener grabación">
+                <button type="button" class="stop-button" id="stop" style="display:none" aria-label="Detener grabación">
                     ⏹️
                 </button>
             </div>
         </div>
-    </div>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="static/recorder.js"></script>
-
-    <script type="text/javascript">
-        function playAudio(audioFile) {
-            let audio = new Audio();
-            audio.src = "/static/" + audioFile + "?t=" + new Date().getTime();
-            audio.addEventListener('error', function(e) {
-                console.error('Error loading audio:', e);
-            });
-            audio.addEventListener('loadeddata', function() {
-                console.log('Audio loaded successfully');
-                audio.play().catch(function(error) {
-                    console.error('Error playing audio:', error);
-                });
-            });
-            return audio;
-        }
-
-        recorder("/audio", response => {
-            document.getElementById("record").style.display="";
-            document.getElementById("stop").style.display="none";
-            document.getElementById("text").innerHTML = response.text;
-            document.getElementById("神").innerHTML = response.神;
-            
-            if (typeof response.file !== "undefined") {
-                audioFile = response.file;
-                let audio = new Audio();
-                audio.setAttribute("src", "static/" + audioFile + "?t=" + new Date().getTime());
-                audio.play();
-                scrollToBottom();
-            }
-        });
-    </script>
 
     <style>
         .send-button, .mic-button, .stop-button {

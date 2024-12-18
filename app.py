@@ -17,7 +17,7 @@ def index():
 
 @app.route("/audio", methods=["POST", "OPTIONS"])
 def audio():
-    # Manejar preflight CORS
+    print("Recibiendo petición en /audio")
     if request.method == "OPTIONS":
         response = make_response()
         response.headers.add("Access-Control-Allow-Origin", "*")
@@ -27,12 +27,14 @@ def audio():
 
     try:
         if request.is_json:
-            # Procesar solicitud de texto
+            print("Procesando solicitud JSON")
             data = request.get_json()
             text = data.get('text', '')
             if not text:
+                print("No se recibió texto")
                 return jsonify({'error': 'No se recibió texto'}), 400
             
+            print(f"Texto recibido: {text}")
             # Procesar el texto
             神 = text
             answer, function_args, function_response, function_name = LLM().process_response(text)
@@ -56,12 +58,14 @@ def audio():
                 'functions_history': functions_history
             })
         else:
-            # Procesar solicitud de audio
+            print("Procesando solicitud de audio")
             audio = request.files.get('audio')
             if not audio:
+                print("No se recibió archivo de audio")
                 return jsonify({'error': 'No se recibió archivo de audio'}), 400
             
             try:
+                print("Subiendo audio a Cloudinary")
                 # Subir audio a Cloudinary
                 result = cloudinary.uploader.upload(
                     audio,

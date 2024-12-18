@@ -189,6 +189,7 @@ class AudioChat {
         if (!text.trim()) return;
         
         try {
+            console.log('Intentando enviar texto:', text);
             this.addMessage(text, true);
             
             const response = await fetch('/audio', {
@@ -200,11 +201,14 @@ class AudioChat {
                 body: JSON.stringify({ text })
             });
             
+            console.log('Respuesta recibida:', response);
+            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
             const data = await response.json();
+            console.log('Datos recibidos:', data);
             
             if (data.text) {
                 this.addMessage(data.text, false);
@@ -214,7 +218,7 @@ class AudioChat {
                 await this.playAudio(data.file);
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error detallado:', error);
             this.addMessage('⚠️ Error al procesar el mensaje', false);
         }
     }
@@ -226,16 +230,22 @@ function initChat() {
     try {
         chat = new AudioChat();
         console.log('Chat inicializado correctamente');
+        
+        const textInput = document.querySelector('#textInput');
+        if (textInput) {
+            textInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    sendText();
+                }
+            });
+        }
     } catch (error) {
         console.error('Error al inicializar el chat:', error);
     }
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initChat);
-} else {
-    initChat();
-}
+document.addEventListener('DOMContentLoaded', initChat);
 
 function sendText() {
     try {

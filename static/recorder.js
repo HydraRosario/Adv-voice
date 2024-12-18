@@ -7,18 +7,30 @@ let audioResponseHandler;
 function recorder(url, handler) {
     recordUrl = url;
     audioResponseHandler = function(data) {
-        document.getElementById("record-stop-loading").style.display = "none";
-        document.getElementById("record").style.display = "";
-        
         document.getElementById("text").innerHTML = data.text;
         document.getElementById("神").innerHTML = data.神;
         
         if (data.file) {
-            let audio = new Audio(data.file);
-            audio.play().catch(e => console.error('Error reproduciendo audio:', e));
-            scrollToBottom();
+            let audio = new Audio();
+            audio.src = data.file;  // URL directa de Cloudinary
+            audio.play()
+                .then(() => {
+                    try {
+                        scrollToBottom();
+                    } catch (e) {
+                        console.log("Error al hacer scroll:", e);
+                    }
+                })
+                .catch(e => console.error('Error reproduciendo audio:', e));
         }
     };
+}
+
+function scrollToBottom() {
+    const container = document.querySelector('.messages-container');
+    if (container) {
+        container.scrollTop = container.scrollHeight;
+    }
 }
 
 async function record() {
@@ -43,11 +55,8 @@ async function record() {
         rec.onstop = doPreview;
         rec.start();
     } catch (e) {
+        console.error("Error al grabar:", e);
         alert("No fue posible grabar audio.");
-        document.getElementById("record").style.display = "";
-        document.getElementById("stop").style.display = "none";
-        document.getElementById("record-stop-label").style.display = "none";
-        document.getElementById("record-stop-loading").style.display = "none";
     }
 }
 
@@ -109,19 +118,20 @@ function sendText() {
             document.getElementById("神").innerHTML = data.神;
             
             if (data.file) {
-                let audio = new Audio(data.file);  // URL directa de Cloudinary
-                audio.play().catch(e => console.error('Error reproduciendo audio:', e));
-                scrollToBottom();
+                let audio = new Audio();
+                audio.src = data.file;  // URL directa de Cloudinary
+                audio.play()
+                    .then(() => {
+                        try {
+                            scrollToBottom();
+                        } catch (e) {
+                            console.log("Error al hacer scroll:", e);
+                        }
+                    })
+                    .catch(e => console.error('Error reproduciendo audio:', e));
             }
         })
         .catch(error => console.error('Error:', error));
-    }
-}
-
-function scrollToBottom() {
-    const messagesContainer = document.querySelector('.messages-container');
-    if (messagesContainer) {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 }
 

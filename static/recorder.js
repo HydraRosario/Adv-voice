@@ -6,6 +6,11 @@ class AudioChat {
         this.isPlaying = false;
         this.audioQueue = [];
         this.messagesContainer = document.querySelector('.messages-container');
+        
+        // Inicializar con el mensaje de bienvenida
+        if (this.messagesContainer) {
+            this.addMessage("¡Hola! Soy aquí para ayudarte con tus preguntas y necesidades. ¿En qué puedo ayudarte hoy?", false);
+        }
     }
 
     createMessageElement(text, isUser = false) {
@@ -43,7 +48,9 @@ class AudioChat {
         const messageElement = this.createMessageElement(text, isUser);
         if (this.messagesContainer) {
             this.messagesContainer.appendChild(messageElement);
-            messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            setTimeout(() => {
+                messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }, 100);
         }
     }
 
@@ -60,6 +67,7 @@ class AudioChat {
             });
             
             const data = await response.json();
+            
             if (data.text && data.text.trim()) {
                 this.addMessage(data.text, false);
             }
@@ -148,10 +156,10 @@ class AudioChat {
     }
 }
 
-// Inicializar el chat
+// Inicializar el chat cuando el DOM esté listo
 const chat = new AudioChat();
 
-// Función para enviar texto
+// Función global para enviar texto
 function sendText() {
     const textInput = document.querySelector('#textInput');
     if (textInput && textInput.value.trim()) {

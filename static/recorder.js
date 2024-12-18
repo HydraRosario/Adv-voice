@@ -67,14 +67,7 @@ class AudioChat {
             });
             
             const data = await response.json();
-            
-            if (data.text && data.text.trim()) {
-                this.addMessage(data.text, false);
-            }
-            
-            if (data.file) {
-                await this.playAudio(data.file);
-            }
+            await this.handleResponse(data);
         } catch (error) {
             console.error('Error:', error);
             this.addMessage('⚠️ Error al procesar el mensaje', false);
@@ -124,34 +117,56 @@ class AudioChat {
         }
     }
 
+    async record() {
+        try {
+            this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            this.rec = new MediaRecorder(this.stream);
+            this.blobs = [];
+            
+            this.rec.ondataavailable = (e) => {
+                this.blobs.push(e.data);
+            };
+            
+            this.rec.onstop = async () => {
+                const blob = new Blob(this.blobs);
+                await this.sendAudio(blob);
+                this.stream.getTracks().forEach(track => track.stop());
+            };
+            
+            document.getElementById("record").style.display = "none";
+            document.getElementById("stop").style.display = "";
+            this.rec.start();
+        } catch (error) {
+            console.error('Error al iniciar grabación:', error);
+            this.addMessage('⚠️ No fue posible acceder al micrófono. Por favor, asegúrate de dar los permisos necesarios.', false);
+        }
+    }
+
     async sendAudio(blob) {
         const fd = new FormData();
         fd.append("audio", blob, "audio");
         
         try {
-            document.getElementById("record-stop-label").style.display = "none";
-            document.getElementById("record-stop-loading").style.display = "";
-            
             const response = await fetch('/audio', {
                 method: "POST",
                 body: fd
             });
             
             const data = await response.json();
+            
+            if (data.神 && data.神.trim()) {
+                this.addMessage(data.神, true);
+            }
+            
             await this.handleResponse(data);
             
             document.getElementById("record").style.display = "";
             document.getElementById("stop").style.display = "none";
-            document.getElementById("record-stop-label").style.display = "";
-            document.getElementById("record-stop-loading").style.display = "none";
         } catch (error) {
             console.error('Error:', error);
             this.addMessage('⚠️ Error al procesar el audio', false);
-            
             document.getElementById("record").style.display = "";
             document.getElementById("stop").style.display = "none";
-            document.getElementById("record-stop-label").style.display = "";
-            document.getElementById("record-stop-loading").style.display = "none";
         }
     }
 }
@@ -164,12 +179,25 @@ function sendText() {
     const textInput = document.querySelector('#textInput');
     if (textInput && textInput.value.trim()) {
         const text = textInput.value;
-        textInput.value = ''; // Limpiar inmediatamente
+        textInput.value = '';
         chat.sendText(text);
     }
 }
 
-// Event listener para Enter
+function record() {
+    chat.record().catch(error => {
+        console.error('Error al iniciar grabación:', error);
+        chat.addMessage('⚠️ No fue posible grabar audio. Por favor, verifica los permisos del micrófono.', false);
+    });
+}
+
+function stop() {
+    if (chat.rec && chat.rec.state === "recording") {
+        chat.rec.stop();
+    }
+}
+
+// Event listener para el Enter
 document.addEventListener('DOMContentLoaded', () => {
     const textInput = document.querySelector('#textInput');
     if (textInput) {

@@ -5,34 +5,32 @@ let recordUrl;
 let audioResponseHandler;
 
 function audioHandler(data) {
-    // Verificar que los elementos existen antes de modificarlos
     const textElement = document.getElementById("text");
     const godElement = document.getElementById("神");
+    const messagesContainer = document.querySelector('.messages-container');
     
     if (textElement) textElement.innerHTML = data.text || '';
     if (godElement) godElement.innerHTML = data.神 || '';
     
     if (data.file) {
         let audio = new Audio();
-        audio.crossOrigin = "anonymous";  // Permitir CORS
-        audio.src = data.file;
+        audio.crossOrigin = "anonymous";
         
-        // Intentar reproducir el audio
+        const audioUrl = data.file.replace('/static/', '');
+        audio.src = audioUrl;
+        
         audio.play()
             .then(() => {
-                console.log("Audio reproduciendo correctamente");
-                try {
-                    scrollToBottom();
-                } catch (e) {
-                    console.log("Error al hacer scroll:", e);
+                console.log("Audio reproduciendo correctamente:", audioUrl);
+                if (messagesContainer) {
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 }
             })
             .catch(e => {
                 console.error('Error reproduciendo audio:', e);
-                // Intentar reproducir de nuevo después de un momento
-                setTimeout(() => {
-                    audio.play().catch(e => console.error('Segundo intento fallido:', e));
-                }, 1000);
+                if (textElement) {
+                    textElement.innerHTML += '<br><small style="color: red;">Error al reproducir el audio. Por favor, inténtelo de nuevo.</small>';
+                }
             });
     }
 }
@@ -40,40 +38,6 @@ function audioHandler(data) {
 function recorder(url, handler) {
     recordUrl = url;
     audioResponseHandler = audioHandler;
-}
-
-function scrollToBottom() {
-    const container = document.querySelector('.messages-container');
-    if (container) {
-        container.scrollTop = container.scrollHeight;
-    }
-}
-
-async function record() {
-    try {
-        document.getElementById("神").innerHTML = "<i>Grabando...</i>";
-        document.getElementById("record").style.display = "none";
-        document.getElementById("stop").style.display = "";
-        document.getElementById("record-stop-label").style.display = "block";
-        document.getElementById("record-stop-loading").style.display = "none";
-        document.getElementById("stop").disabled = false;
-
-        blobs = [];
-
-        stream = await navigator.mediaDevices.getUserMedia({audio:true, video:false});
-        rec = new MediaRecorder(stream);
-        rec.ondataavailable = e => {
-            if (e.data) {
-                blobs.push(e.data);
-            }
-        }
-        
-        rec.onstop = doPreview;
-        rec.start();
-    } catch (e) {
-        console.error("Error al grabar:", e);
-        alert("No fue posible grabar audio.");
-    }
 }
 
 function doPreview() {
@@ -103,15 +67,6 @@ function doPreview() {
         document.getElementById("record-stop-label").style.display = "none";
         document.getElementById("record-stop-loading").style.display = "none";
     });
-}
-
-function stop() {
-    document.getElementById("record-stop-label").style.display = "none";
-    document.getElementById("record-stop-loading").style.display = "block";
-    document.getElementById("stop").style.display = "none";
-    document.getElementById("stop").disabled = true;
-    rec.stop();
-    stream.getTracks().forEach(track => track.stop());
 }
 
 function sendText() {

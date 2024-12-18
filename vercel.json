@@ -1,26 +1,21 @@
 {
     "version": 2,
-    "builds": [
-        {
-            "src": "app.py",
-            "use": "@vercel/python"
+    "functions": {
+        "api/*.py": {
+            "runtime": "python3.9",
+            "memory": 1024,
+            "maxDuration": 10
         }
-    ],
+    },
     "routes": [
         {
             "src": "/(.*)",
-            "dest": "app.py"
+            "dest": "/api/app.py"
         }
     ],
     "env": {
         "PYTHONPATH": ".",
         "FLASK_ENV": "production"
     },
-    "public": true,
-    "functions": {
-        "app.py": {
-            "memory": 1024,
-            "maxDuration": 10
-        }
-    }
+    "public": true
 }

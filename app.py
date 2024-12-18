@@ -61,4 +61,4 @@ def audio():
             return jsonify({'error': 'No se recibió archivo de audio'}), 400
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)

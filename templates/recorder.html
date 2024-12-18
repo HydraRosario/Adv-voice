@@ -71,7 +71,10 @@
             document.getElementById("神").innerHTML = response.神;
             
             if (typeof response.file !== "undefined") {
-                playAudio(response.file);
+                audioFile = response.file;
+                let audio = new Audio();
+                audio.setAttribute("src", "static/" + audioFile + "?t=" + new Date().getTime());
+                audio.play();
                 scrollToBottom();
             }
         });

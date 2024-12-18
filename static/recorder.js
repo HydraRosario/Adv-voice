@@ -40,6 +40,15 @@ async function record() {
     }
 }
 
+function scrollToBottom() {
+    var chatBox = document.querySelector('.chat-container');
+    if (chatBox) {
+        chatBox.scrollTop = chatBox.scrollHeight;
+    } else {
+        console.error('El elemento chat-container no se encontró en el DOM');
+    }
+}
+
 function doPreview() {
     if (!blobs.length) {
         console.log("No hay blobs!");
@@ -52,8 +61,19 @@ function doPreview() {
             method: "POST",
             body: fd,
         })
-        .then((response) => response.json())
-        .then(audioResponseHandler)
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error('Error en la respuesta del servidor');
+            }
+            return response.json();
+        })
+        .then((data) => {
+            audioResponseHandler(data);
+            scrollToBottom(); // Asegúrate de que esta función esté definida
+        })
+        .catch((error) => {
+            console.error('Error al enviar el audio:', error);
+        });
     }
 }
 
@@ -76,11 +96,6 @@ function handleAudioResponse(response){
     }
 }
 
-function scrollToBottom() {
-    var chatBox = document.querySelector('.chat-container');
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
-
 function sendText() {
     const textInput = document.getElementById("textInput");
     const text = textInput.value.trim();
@@ -97,18 +112,15 @@ function sendText() {
         .then(data => {
             document.getElementById("text").innerHTML = data.text;
             document.getElementById("神").innerHTML = data.神;
-            if (data.functions_history) {
-                document.getElementById("functions_history").innerHTML = data.functions_history;
-            }
             textInput.value = ''; // Limpiar el campo de texto
             
             if (typeof data.file !== "undefined") {
-                playAudio(data.file);
+                audioFile = data.file;
+                let audio = new Audio();
+                audio.setAttribute("src", "static/" + audioFile + "?t=" + new Date().getTime());
+                audio.play();
                 scrollToBottom();
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
         });
     }
 }

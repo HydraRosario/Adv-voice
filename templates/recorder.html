@@ -19,8 +19,6 @@
 
         <div class="chat-section">
             <div class="messages-container">
-                <div id="神" class="chat-box user-chat"></div>
-                <div id="text" class="chat-box assistant-chat"></div>
             </div>
         </div>
 
@@ -78,41 +76,6 @@
                 scrollToBottom();
             }
         });
-
-        // Añadir event listener para enviar con Enter
-        document.getElementById('textInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                sendText();  // Llamar directamente a la función sendText
-            }
-        });
     </script>
-
-    <style>
-    .chat-input {
-        position: fixed;
-        bottom: 80px;
-        right: 20px;
-        width: 300px;
-        display: flex;
-        gap: 10px;
-    }
-
-    .chat-input input {
-        flex: 1;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-    }
-
-    .chat-input button {
-        padding: 10px 20px;
-        background: #007bff;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-    </style>
   </body>
 </html>

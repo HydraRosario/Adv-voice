@@ -1,146 +1,307 @@
-let blobs = [];
-let stream;
-let rec;
-let recordUrl;
-let audioResponseHandler;
-
-function updateText(data) {
-    try {
-        // Intentar obtener los elementos
-        const textElement = document.querySelector("#text") || document.querySelector(".text");
-        const godElement = document.querySelector("#神") || document.querySelector(".god");
+class AudioChat {
+    constructor() {
+        this.blobs = [];
+        this.stream = null;
+        this.rec = null;
+        this.isPlaying = false;
+        this.audioQueue = [];
+        this.messagesContainer = document.querySelector('.messages-container');
         
-        // Actualizar solo si existen
-        if (textElement && data.text) {
-            textElement.textContent = data.text;
-        }
-        if (godElement && data.神) {
-            godElement.textContent = data.神;
-        }
-    } catch (e) {
-        console.error('Error actualizando texto:', e);
-    }
-}
+        // Limpiar los divs vacíos iniciales
+        if (this.messagesContainer) {
+            const emptyDivs = this.messagesContainer.querySelectorAll('div:empty');
+            emptyDivs.forEach(div => div.remove());
+            
+            // Aplicar estilos mejorados al contenedor de mensajes
+            this.messagesContainer.style.cssText = `
+                flex: 1;
+                overflow-y: auto;
+                padding: 20px;
+                background-color: rgba(245, 235, 220, 0.95);
+                border-radius: 15px;
+                margin: 0 20px;
+                backdrop-filter: blur(10px);
+                scrollbar-width: thin;
+                scrollbar-color: #e3c19b transparent;
+            `;
 
-function playAudio(audioUrl) {
-    if (!audioUrl) {
-        console.error('URL de audio no válida');
-        return;
-    }
-
-    console.log('Intentando reproducir:', audioUrl);
-    
-    let audio = new Audio();
-    audio.crossOrigin = "anonymous";
-    
-    // Usar la URL de Cloudinary directamente
-    if (audioUrl.includes('cloudinary.com')) {
-        audio.src = audioUrl;
-    } else {
-        // Si no es una URL de Cloudinary, limpiar el prefijo /static/
-        audio.src = audioUrl.replace('/static/', '');
-    }
-    
-    audio.play()
-        .then(() => {
-            console.log("Audio reproduciendo:", audio.src);
-            try {
-                const container = document.querySelector('.messages-container');
-                if (container) {
-                    setTimeout(() => {
-                        container.scrollTop = container.scrollHeight;
-                    }, 100);
-                }
-            } catch (e) {
-                console.log("Error al hacer scroll:", e);
+            // Obtener el contenedor padre
+            const chatSection = document.querySelector('.chat-section');
+            if (chatSection) {
+                chatSection.style.cssText = `
+                    background: linear-gradient(45deg, #4a1942 0%, #7e3f1d 100%);
+                    border-radius: 15px;
+                    padding: 20px;
+                    margin: 20px 0;
+                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0;
+                    height: 350px;
+                `;
             }
-        })
-        .catch(e => {
-            console.error('Error reproduciendo audio:', e);
-            const textElement = document.querySelector("#text") || document.querySelector(".text");
-            if (textElement) {
-                const errorMsg = document.createElement('div');
-                errorMsg.innerHTML = '<small style="color: red;">Error al reproducir el audio. Por favor, inténtelo de nuevo.</small>';
-                textElement.appendChild(errorMsg);
-            }
-        });
-}
 
-function audioHandler(data) {
-    // Actualizar texto
-    updateText(data);
-    
-    // Reproducir audio si existe
-    if (data.file) {
-        playAudio(data.file);
+            // Ajustar el contenedor de input
+            const inputSection = document.querySelector('.input-section');
+            if (inputSection) {
+                inputSection.style.cssText = `
+                    background: linear-gradient(45deg, #4a1942 0%, #7e3f1d 100%);
+                    border-radius: 15px;
+                    padding: 15px;
+                    margin-top: -15px;
+                `;
+            }
+
+            // Ajustar el contenedor del input
+            const inputContainer = document.querySelector('.input-container');
+            if (inputContainer) {
+                inputContainer.style.cssText = `
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                    padding: 0 5px;
+                `;
+            }
+        }
+    }
+
+    createMessageElement(text, isUser = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-box ${isUser ? 'user-chat' : 'assistant-chat'}`;
+        
+        messageDiv.style.cssText = `
+            margin: 10px 0;
+            padding: 15px 20px;
+            border-radius: 20px;
+            max-width: 80%;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            ${isUser ? `
+                margin-left: auto;
+                background-color: #e3c19b;
+                color: #000;
+                margin-right: 15px;
+                border-bottom-right-radius: 5px;
+            ` : `
+                margin-right: auto;
+                background-color: #f5e6d3;
+                color: #000;
+                margin-left: 15px;
+                border-bottom-left-radius: 5px;
+            `}
+        `;
+        
+        // Añadir animación CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        messageDiv.textContent = text;
+        return messageDiv;
+    }
+
+    addMessage(text, isUser = false) {
+        if (!text) return;
+        
+        const messageElement = this.createMessageElement(text, isUser);
+        
+        if (this.messagesContainer) {
+            this.messagesContainer.appendChild(messageElement);
+            
+            setTimeout(() => {
+                messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }, 100);
+        }
+    }
+
+    async playAudio(url) {
+        this.audioQueue.push(url);
+        if (!this.isPlaying) {
+            this.processAudioQueue();
+        }
+    }
+
+    async processAudioQueue() {
+        if (this.audioQueue.length === 0) {
+            this.isPlaying = false;
+            return;
+        }
+
+        this.isPlaying = true;
+        const url = this.audioQueue.shift();
+        
+        try {
+            const audio = new Audio();
+            audio.crossOrigin = "anonymous";
+            audio.src = url.includes('cloudinary.com') ? url : url;
+            
+            await audio.play();
+            await new Promise(resolve => {
+                audio.onended = resolve;
+            });
+            
+            this.processAudioQueue();
+        } catch (error) {
+            console.error('Error reproduciendo audio:', error);
+            this.addMessage('⚠️ Error al reproducir el audio', false);
+            this.processAudioQueue();
+        }
+    }
+
+    async handleResponse(data) {
+        // Solo añadir mensajes si hay texto
+        if (data.text && data.text.trim()) {
+            this.addMessage(data.text, false);
+        }
+        
+        // No duplicar el mensaje del usuario
+        // El mensaje del usuario ya se añadió en sendText()
+        
+        if (data.file) {
+            await this.playAudio(data.file);
+        }
+    }
+
+    async sendText(text) {
+        if (!text.trim()) return;
+        
+        this.addMessage(text, true);
+        
+        try {
+            const response = await fetch('/audio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+            });
+            
+            const data = await response.json();
+            await this.handleResponse(data);
+        } catch (error) {
+            console.error('Error:', error);
+            this.addMessage('⚠️ Error al procesar el mensaje', false);
+        }
+    }
+
+    async sendAudio(blob) {
+        const fd = new FormData();
+        fd.append("audio", blob, "audio");
+        
+        try {
+            // Mostrar indicador de carga
+            document.getElementById("record-stop-label").style.display = "none";
+            document.getElementById("record-stop-loading").style.display = "";
+            
+            const response = await fetch('/audio', {
+                method: "POST",
+                body: fd
+            });
+            
+            const data = await response.json();
+            console.log('Datos recibidos del servidor:', data); // Log para depuración
+            
+            // Verificar todos los campos posibles de transcripción
+            if (data.transcription) {
+                console.log('Transcripción encontrada:', data.transcription);
+                this.addMessage(data.transcription, true);
+            } else if (data.神) {
+                console.log('Transcripción 神 encontrada:', data.神);
+                this.addMessage(data.神, true);
+            } else if (data.userMessage) {
+                console.log('Mensaje de usuario encontrado:', data.userMessage);
+                this.addMessage(data.userMessage, true);
+            } else {
+                console.log('No se encontró transcripción en la respuesta');
+            }
+            
+            // Añadir respuesta del asistente
+            if (data.text && data.text.trim()) {
+                console.log('Respuesta del asistente:', data.text);
+                this.addMessage(data.text, false);
+            }
+            
+            // Reproducir audio si existe
+            if (data.file) {
+                console.log('Audio recibido:', data.file);
+                await this.playAudio(data.file);
+            }
+            
+            // Restaurar botones
+            document.getElementById("record").style.display = "";
+            document.getElementById("stop").style.display = "none";
+            document.getElementById("record-stop-label").style.display = "";
+            document.getElementById("record-stop-loading").style.display = "none";
+        } catch (error) {
+            console.error('Error completo:', error);
+            this.addMessage('⚠️ Error al procesar el audio', false);
+            
+            // Restaurar botones en caso de error
+            document.getElementById("record").style.display = "";
+            document.getElementById("stop").style.display = "none";
+            document.getElementById("record-stop-label").style.display = "";
+            document.getElementById("record-stop-loading").style.display = "none";
+        }
     }
 }
 
-function recorder(url, handler) {
-    recordUrl = url;
-    audioResponseHandler = audioHandler;
+// Inicializar
+const chat = new AudioChat();
+
+// Funciones globales
+function sendText() {
+    const input = document.querySelector('#textInput');
+    if (input && input.value.trim()) {
+        const text = input.value;
+        input.value = '';
+        chat.sendText(text);
+    }
 }
 
 function doPreview() {
-    if (!blobs.length) {
-        console.log("No hay blobs!");
-        return;
+    if (chat.blobs.length) {
+        const blob = new Blob(chat.blobs);
+        chat.sendAudio(blob);
     }
-    
-    const blob = new Blob(blobs);
-    var fd = new FormData();
-    fd.append("audio", blob, "audio");
-
-    fetch(recordUrl, {
-        method: "POST",
-        body: fd
-    })
-    .then(response => response.json())
-    .then(audioHandler)
-    .catch(error => {
-        console.error('Error:', error);
-        const elements = {
-            record: document.querySelector("#record"),
-            stop: document.querySelector("#stop"),
-            label: document.querySelector("#record-stop-label"),
-            loading: document.querySelector("#record-stop-loading")
-        };
-        
-        if (elements.record) elements.record.style.display = "";
-        if (elements.stop) elements.stop.style.display = "none";
-        if (elements.label) elements.label.style.display = "none";
-        if (elements.loading) elements.loading.style.display = "none";
-    });
 }
 
-function sendText() {
-    const textInput = document.querySelector('#textInput');
-    if (!textInput) {
-        console.error('Elemento textInput no encontrado');
-        return;
-    }
-    
-    const text = textInput.value.trim();
-    if (text) {
-        textInput.value = '';
-        
-        fetch('/audio', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ text: text })
+function record() {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+            chat.stream = stream;
+            chat.rec = new MediaRecorder(stream);
+            chat.rec.ondataavailable = e => chat.blobs.push(e.data);
+            chat.rec.start();
+            
+            document.getElementById("record").style.display = "none";
+            document.getElementById("stop").style.display = "";
+            document.getElementById("record-stop-label").style.display = "";
+            document.getElementById("record-stop-loading").style.display = "none";
         })
-        .then(response => response.json())
-        .then(audioHandler)
-        .catch(error => console.error('Error:', error));
-    }
+        .catch(console.error);
 }
 
-// Añadir event listener para el campo de texto
-document.getElementById('text-input').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {  // Detectar cuando se presiona Enter
-        e.preventDefault();    // Prevenir el comportamiento por defecto
-        document.getElementById('send-button').click();  // Simular click en el botón de enviar
+function stop() {
+    chat.rec.stop();
+    chat.stream.getTracks()[0].stop();
+    document.getElementById("record-stop-label").style.display = "none";
+    document.getElementById("record-stop-loading").style.display = "";
+    chat.blobs = [];
+    setTimeout(doPreview, 1000);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.querySelector('#textInput');
+    if (input) {
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendText();
+            }
+        });
     }
 });

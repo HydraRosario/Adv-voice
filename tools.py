@@ -69,7 +69,7 @@ def transcriber(audio_url):
 def addVoice(text):
     try:
         async def generate_audio():
-            communicate = edge_tts.Communicate(text, "es-ES-AlvaroNeural", rate="+15%")
+            communicate = edge_tts.Communicate(text, "es-ES-AlvaroNeural", rate="+35%")
             
             # Generar un nombre único para el archivo temporal
             temp_filename = f"temp_audio_{int(time.time())}.wav"

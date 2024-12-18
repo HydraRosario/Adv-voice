@@ -25,32 +25,21 @@ def transcriber(audio):
 
 #Convertir el texto de respuesta a voz
 def addVoice(text, output_file="respuesta.wav"):
-    voice_id = '21m00Tcm4TlvDq8ikWAM'  # Rachel voice - verified working voice ID
-    model = "eleven_multilingual_v2"
-    api_key = os.getenv('ELEVEN_LABS_API_KEY')
-    url = f'https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream'
-    headers = {
-        'Accept': 'application/json',
-        'xi-api-key': api_key
-    }
-    data = {
-        'text': text,
-        'model_id': model,
-        'voice_settings': {
-            'stability': 0.5,
-            'similarity_boost': 0.8,
-            'style': 0.0,
-            'use_speaker_boost': True
-        }
-    }
-    response = requests.post(url, headers=headers, json=data, stream=True)
-    if response.ok:
-        with open(output_file, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=1024):
-                f.write(chunk)
+    try:
+        import edge_tts
+        import asyncio
+        
+        async def generate_audio():
+            # Configurar voz y velocidad
+            communicate = edge_tts.Communicate(text, "es-ES-AlvaroNeural", rate="+15%")
+            await communicate.save(output_file)
+        
+        # Ejecutar la función asíncrona
+        asyncio.run(generate_audio())
         print(f"Audio guardado en {output_file}")
-    else:
-        print(f"Error en la solicitud: {response.status_code} - {response.text}")
+        
+    except Exception as e:
+        print(f"Error en la conversión de texto a voz: {str(e)}")
 
 #Obtener el clima de una ciudad
 def get_weather(location):

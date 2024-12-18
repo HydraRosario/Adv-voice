@@ -11,5 +11,16 @@
             "src": "/(.*)",
             "dest": "app.py"
         }
-    ]
+    ],
+    "env": {
+        "PYTHONPATH": ".",
+        "FLASK_ENV": "production"
+    },
+    "public": true,
+    "functions": {
+        "app.py": {
+            "memory": 1024,
+            "maxDuration": 10
+        }
+    }
 }

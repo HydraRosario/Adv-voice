@@ -23,3 +23,5 @@ var/
 !.env.example
 chroma_db/
 *.wav
+
+.vercel

@@ -141,44 +141,48 @@ class AudioChat {
 
     addMessage(text, isUser = false) {
         if (!text) return;
-        const messageElement = this.createMessageElement(text, isUser);
-        const container = this.getMessagesContainer();
-        if (container) {
-            container.appendChild(messageElement);
-            messageElement.scrollIntoView({ behavior: 'smooth' });
-        } else {
-            console.error('No se encontró el contenedor de mensajes');
-        }
-    }
-
-    createMessageElement(text, isUser = false) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `chat-box ${isUser ? 'user-chat' : 'assistant-chat'}`;
-        messageDiv.style.cssText = `
-            margin: 10px 0;
-            padding: 15px 20px;
-            border-radius: 20px;
-            max-width: 80%;
-            word-wrap: break-word;
-            animation: fadeIn 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-            ${isUser ? `
-                margin-left: auto;
-                background-color: #e3c19b;
-                color: #000;
-                margin-right: 15px;
-                border-bottom-right-radius: 5px;
-            ` : `
-                margin-right: auto;
-                background-color: #f5e6d3;
-                color: #000;
-                margin-left: 15px;
-                border-bottom-left-radius: 5px;
-            `}
-        `;
         
-        messageDiv.textContent = text;
-        return messageDiv;
+        const container = document.querySelector('.messages-container');
+        if (!container) {
+            console.error('No se pudo encontrar el contenedor de mensajes');
+            return;
+        }
+
+        try {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-box ${isUser ? 'user-chat' : 'assistant-chat'}`;
+            messageDiv.style.cssText = `
+                margin: 10px 0;
+                padding: 15px 20px;
+                border-radius: 20px;
+                max-width: 80%;
+                word-wrap: break-word;
+                animation: fadeIn 0.3s ease;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                ${isUser ? `
+                    margin-left: auto;
+                    background-color: #e3c19b;
+                    color: #000;
+                    margin-right: 15px;
+                    border-bottom-right-radius: 5px;
+                ` : `
+                    margin-right: auto;
+                    background-color: #f5e6d3;
+                    color: #000;
+                    margin-left: 15px;
+                    border-bottom-left-radius: 5px;
+                `}
+            `;
+            
+            messageDiv.textContent = text;
+            container.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+        } catch (error) {
+            console.error('Error al agregar mensaje:', error);
+        }
     }
 
     async sendText(text) {
@@ -216,31 +220,37 @@ class AudioChat {
     }
 }
 
-let chat;
-document.addEventListener('DOMContentLoaded', () => {
-    chat = new AudioChat();
+let chat = null;
 
-    const textInput = document.querySelector('#textInput');
-    if (textInput) {
-        textInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                sendText();
-            }
-        });
+function initChat() {
+    try {
+        chat = new AudioChat();
+        console.log('Chat inicializado correctamente');
+    } catch (error) {
+        console.error('Error al inicializar el chat:', error);
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initChat);
+} else {
+    initChat();
+}
 
 function sendText() {
-    if (!chat) {
-        console.error('Chat no inicializado');
-        return;
-    }
-    const textInput = document.querySelector('#textInput');
-    if (textInput && textInput.value.trim()) {
-        const text = textInput.value;
-        textInput.value = '';
-        chat.sendText(text);
+    try {
+        if (!chat) {
+            console.error('Chat no inicializado, intentando inicializar...');
+            initChat();
+        }
+        const textInput = document.querySelector('#textInput');
+        if (textInput && textInput.value.trim()) {
+            const text = textInput.value;
+            textInput.value = '';
+            chat.sendText(text);
+        }
+    } catch (error) {
+        console.error('Error al enviar texto:', error);
     }
 }
 

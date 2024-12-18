@@ -4,9 +4,32 @@
         {
             "src": "app.py",
             "use": "@vercel/python"
+        },
+        {
+            "src": "static/**",
+            "use": "@vercel/static"
         }
     ],
     "routes": [
+        {
+            "src": "/static/(.*)",
+            "dest": "/static/$1"
+        },
+        {
+            "src": "/audio",
+            "methods": ["POST"],
+            "dest": "app.py"
+        },
+        {
+            "src": "/transcribe_audio",
+            "methods": ["POST"],
+            "dest": "app.py"
+        },
+        {
+            "src": "/process_text",
+            "methods": ["POST"],
+            "dest": "app.py"
+        },
         {
             "src": "/(.*)",
             "dest": "app.py"

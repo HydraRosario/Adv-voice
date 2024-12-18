@@ -10,8 +10,19 @@ class AudioChat {
 
     async record() {
         try {
-            this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            this.rec = new MediaRecorder(this.stream);
+            // Primero verificamos si el navegador soporta la API de MediaDevices
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('Tu navegador no soporta la grabación de audio');
+            }
+
+            // Solicitamos permisos explícitamente primero
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: true,
+                video: false // Explícitamente negamos el video
+            });
+
+            this.stream = stream;
+            this.rec = new MediaRecorder(stream);
             this.blobs = [];
             
             this.rec.ondataavailable = (e) => {
@@ -19,7 +30,7 @@ class AudioChat {
             };
             
             this.rec.onstop = async () => {
-                const blob = new Blob(this.blobs);
+                const blob = new Blob(this.blobs, { type: 'audio/wav' }); // Especificamos el tipo
                 await this.sendAudio(blob);
                 this.stream.getTracks().forEach(track => track.stop());
             };
@@ -29,7 +40,16 @@ class AudioChat {
             this.rec.start();
         } catch (error) {
             console.error('Error al iniciar grabación:', error);
-            this.addMessage('⚠️ No fue posible grabar audio', false);
+            let errorMessage = 'No fue posible grabar audio';
+            
+            // Mensajes más específicos según el error
+            if (error.name === 'NotAllowedError') {
+                errorMessage = 'Permiso de micrófono denegado. Por favor, permite el acceso al micrófono.';
+            } else if (error.name === 'NotFoundError') {
+                errorMessage = 'No se encontró ningún micrófono. Por favor, conecta un micrófono.';
+            }
+            
+            this.addMessage(`⚠️ ${errorMessage}`, false);
             
             document.getElementById("record").style.display = "";
             document.getElementById("stop").style.display = "none";
@@ -156,21 +176,32 @@ class AudioChat {
         return messageDiv;
     }
 
-    async sendText(text) {
-        if (!text.trim()) return;
+    async sendText() {
+        const textInput = document.querySelector('#textInput');
+        if (!textInput || !textInput.value.trim()) return;
         
-        this.addMessage(text, true);
+        const text = textInput.value;
+        textInput.value = '';
         
         try {
+            this.addMessage(text, true);
+            
             const response = await fetch('/audio', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
                 body: JSON.stringify({ text })
             });
             
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const data = await response.json();
             
-            if (data.text && data.text.trim()) {
+            if (data.text) {
                 this.addMessage(data.text, false);
             }
             

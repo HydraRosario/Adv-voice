@@ -67,20 +67,17 @@ class AudioChat {
             });
             
             const data = await response.json();
-            await this.handleResponse(data);
+            
+            if (data.text && data.text.trim()) {
+                this.addMessage(data.text, false);
+            }
+            
+            if (data.file) {
+                await this.playAudio(data.file);
+            }
         } catch (error) {
             console.error('Error:', error);
             this.addMessage('⚠️ Error al procesar el mensaje', false);
-        }
-    }
-
-    async handleResponse(data) {
-        if (data.text && data.text.trim()) {
-            this.addMessage(data.text, false);
-        }
-        
-        if (data.file) {
-            await this.playAudio(data.file);
         }
     }
 

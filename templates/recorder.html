@@ -24,20 +24,15 @@
 
         <div class="input-section">
             <div class="input-container">
-                <input type="text" class="form-control message-input" id="textInput" placeholder="Escribe tu pregunta aquí...">
-                <button class="send-button" onclick="sendText()">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="send-icon">
-                        <path d="M2 21l21-9L2 3v7l15 2-15 2v7z" fill="currentColor"/>
-                    </svg>
+                <input type="text" class="form-control message-input" id="textInput" placeholder="Escribe tu pregunta aquí..." aria-label="Campo de texto para escribir mensaje">
+                <button class="send-button" onclick="sendText()" aria-label="Enviar mensaje">
+                    Enviar
                 </button>
-                <button type="button" class="record-button" id="record" onclick="record()">
-                    <img src="static/img/microphone.png" alt="Grabar" class="mic-icon">
+                <button type="button" class="record-button" id="record" onclick="record()" aria-label="Iniciar grabación de audio">
+                    Grabar
                 </button>
-                <button type="button" class="stop-button" id="stop" onclick="stop()" style="display:none">
-                    <img src="static/img/stop.svg" alt="Detener" id="record-stop-label"/>
-                    <span id="record-stop-loading" style="display: none">
-                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                    </span>
+                <button type="button" class="stop-button" id="stop" onclick="stop()" style="display:none" aria-label="Detener grabación">
+                    Detener
                 </button>
             </div>
         </div>

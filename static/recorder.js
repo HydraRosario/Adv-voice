@@ -6,11 +6,6 @@ class AudioChat {
         this.isPlaying = false;
         this.audioQueue = [];
         this.messagesContainer = document.querySelector('.messages-container');
-        
-        // Inicializar con el mensaje de bienvenida
-        if (this.messagesContainer) {
-            this.addMessage("¡Hola! Soy aquí para ayudarte con tus preguntas y necesidades. ¿En qué puedo ayudarte hoy?", false);
-        }
     }
 
     createMessageElement(text, isUser = false) {
@@ -67,17 +62,20 @@ class AudioChat {
             });
             
             const data = await response.json();
-            
-            if (data.text && data.text.trim()) {
-                this.addMessage(data.text, false);
-            }
-            
-            if (data.file) {
-                await this.playAudio(data.file);
-            }
+            await this.handleResponse(data);
         } catch (error) {
             console.error('Error:', error);
             this.addMessage('⚠️ Error al procesar el mensaje', false);
+        }
+    }
+
+    async handleResponse(data) {
+        if (data.text && data.text.trim()) {
+            this.addMessage(data.text, false);
+        }
+        
+        if (data.file) {
+            await this.playAudio(data.file);
         }
     }
 
@@ -116,7 +114,21 @@ class AudioChat {
 
     async record() {
         try {
-            this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            // Asegurarnos de que estamos en un contexto seguro
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                throw new Error('Se requiere HTTPS para acceder al micrófono');
+            }
+
+            // Solicitar permisos con opciones específicas
+            const constraints = {
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    sampleRate: 44100
+                }
+            };
+
+            this.stream = await navigator.mediaDevices.getUserMedia(constraints);
             this.rec = new MediaRecorder(this.stream);
             this.blobs = [];
             
@@ -125,23 +137,34 @@ class AudioChat {
             };
             
             this.rec.onstop = async () => {
-                const blob = new Blob(this.blobs);
-                await this.sendAudio(blob);
-                this.stream.getTracks().forEach(track => track.stop());
+                try {
+                    const blob = new Blob(this.blobs, { type: 'audio/webm' });
+                    await this.sendAudio(blob);
+                } finally {
+                    if (this.stream) {
+                        this.stream.getTracks().forEach(track => track.stop());
+                    }
+                }
             };
             
             document.getElementById("record").style.display = "none";
             document.getElementById("stop").style.display = "";
             this.rec.start();
         } catch (error) {
-            console.error('Error al iniciar grabación:', error);
-            this.addMessage('⚠️ No fue posible acceder al micrófono. Por favor, asegúrate de dar los permisos necesarios.', false);
+            console.error('Error en grabación:', error);
+            
+            // Restaurar estado de botones
+            document.getElementById("record").style.display = "";
+            document.getElementById("stop").style.display = "none";
+            
+            // Lanzar el error para que sea manejado por el código que llama
+            throw error;
         }
     }
 
     async sendAudio(blob) {
         const fd = new FormData();
-        fd.append("audio", blob, "audio");
+        fd.append("audio", blob, "audio.webm");
         
         try {
             const response = await fetch('/audio', {
@@ -149,19 +172,27 @@ class AudioChat {
                 body: fd
             });
             
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const data = await response.json();
             
             if (data.神 && data.神.trim()) {
                 this.addMessage(data.神, true);
             }
             
-            await this.handleResponse(data);
+            if (data.text && data.text.trim()) {
+                this.addMessage(data.text, false);
+            }
             
-            document.getElementById("record").style.display = "";
-            document.getElementById("stop").style.display = "none";
+            if (data.file) {
+                await this.playAudio(data.file);
+            }
         } catch (error) {
-            console.error('Error:', error);
-            this.addMessage('⚠️ Error al procesar el audio', false);
+            console.error('Error en envío de audio:', error);
+            throw error;
+        } finally {
             document.getElementById("record").style.display = "";
             document.getElementById("stop").style.display = "none";
         }

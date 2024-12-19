@@ -43,15 +43,16 @@ class AudioChat {
                 
                 console.log('Acceso al micrófono concedido');
                 
-                this.rec = new MediaRecorder(this.stream);
+                const recorder = new MediaRecorder(this.stream);
+                this.rec = recorder;
                 this.blobs = [];
                 
-                this.rec.ondataavailable = (e) => {
+                recorder.ondataavailable = (e) => {
                     console.log('Datos de audio disponibles');
                     this.blobs.push(e.data);
                 };
                 
-                this.rec.onstop = async () => {
+                recorder.onstop = async () => {
                     console.log('Grabación detenida');
                     const blob = new Blob(this.blobs, { type: 'audio/webm' });
                     await this.sendAudio(blob);
@@ -61,7 +62,7 @@ class AudioChat {
                 if (recordButton) recordButton.style.display = "none";
                 if (stopButton) stopButton.style.display = "";
                 
-                this.rec.start();
+                recorder.start();
                 console.log('Grabación iniciada');
             } catch (error) {
                 console.error('Error:', error);

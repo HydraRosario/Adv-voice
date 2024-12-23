@@ -29,9 +29,6 @@ class AudioChat {
                     throw new Error('Tu navegador no soporta la grabación de audio');
                 }
 
-                const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
-                console.log('Estado del permiso del micrófono:', permissionStatus.state);
-
                 this.stream = await navigator.mediaDevices.getUserMedia({ 
                     audio: {
                         echoCancellation: true,
@@ -41,19 +38,15 @@ class AudioChat {
                     video: false 
                 });
                 
-                console.log('Acceso al micrófono concedido');
-                
                 const recorder = new MediaRecorder(this.stream);
                 this.rec = recorder;
                 this.blobs = [];
                 
                 recorder.ondataavailable = (e) => {
-                    console.log('Datos de audio disponibles');
                     this.blobs.push(e.data);
                 };
                 
                 recorder.onstop = async () => {
-                    console.log('Grabación detenida');
                     const blob = new Blob(this.blobs, { type: 'audio/webm' });
                     await this.sendAudio(blob);
                     this.stream.getTracks().forEach(track => track.stop());
@@ -63,7 +56,6 @@ class AudioChat {
                 if (stopButton) stopButton.style.display = "";
                 
                 recorder.start();
-                console.log('Grabación iniciada');
             } catch (error) {
                 console.error('Error:', error);
                 this.addMessage(`⚠️ ${error.message}`, false);
@@ -81,7 +73,6 @@ class AudioChat {
         fd.append("audio", blob, "audio");
         
         try {
-            // Primera petición: solo para transcribir
             const transcriptionResponse = await fetch('/transcribe_audio', {
                 method: "POST",
                 body: fd
@@ -89,12 +80,10 @@ class AudioChat {
             
             const transcriptionData = await transcriptionResponse.json();
             
-            // Mostramos la transcripción inmediatamente
             if (transcriptionData.transcription) {
                 this.addMessage(transcriptionData.transcription, true);
             }
             
-            // Segunda petición: para obtener la respuesta del modelo
             const modelResponse = await fetch('/process_text', {
                 method: "POST",
                 headers: {
@@ -105,7 +94,6 @@ class AudioChat {
             
             const modelData = await modelResponse.json();
             
-            // Mostramos la respuesta del modelo
             if (modelData.text) {
                 this.addMessage(modelData.text, false);
             }
@@ -169,29 +157,6 @@ class AudioChat {
         try {
             const messageDiv = document.createElement('div');
             messageDiv.className = `chat-box ${isUser ? 'user-chat' : 'assistant-chat'}`;
-            messageDiv.style.cssText = `
-                margin: 10px 0;
-                padding: 15px 20px;
-                border-radius: 20px;
-                max-width: 80%;
-                word-wrap: break-word;
-                animation: fadeIn 0.3s ease;
-                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-                ${isUser ? `
-                    margin-left: auto;
-                    background-color: #e3c19b;
-                    color: #000;
-                    margin-right: 15px;
-                    border-bottom-right-radius: 5px;
-                ` : `
-                    margin-right: auto;
-                    background-color: #f5e6d3;
-                    color: #000;
-                    margin-left: 15px;
-                    border-bottom-left-radius: 5px;
-                `}
-            `;
-            
             messageDiv.textContent = text;
             container.appendChild(messageDiv);
             
@@ -207,7 +172,6 @@ class AudioChat {
         if (!text.trim()) return;
         
         try {
-            console.log('URL de la petición:', window.location.origin + '/audio');
             this.addMessage(text, true);
             
             const response = await fetch('/audio', {
@@ -221,14 +185,11 @@ class AudioChat {
                 body: JSON.stringify({ text })
             });
             
-            console.log('Respuesta recibida:', response);
-            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
             const data = await response.json();
-            console.log('Datos recibidos:', data);
             
             if (data.text) {
                 this.addMessage(data.text, false);
@@ -249,7 +210,6 @@ let chat = null;
 function initChat() {
     try {
         chat = new AudioChat();
-        console.log('Chat inicializado correctamente');
         
         const textInput = document.querySelector('#textInput');
         if (textInput) {

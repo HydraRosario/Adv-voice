@@ -39,25 +39,15 @@ def audio():
                 return jsonify({'error': 'No se recibió texto'}), 400
             
             print(f"Texto recibido: {text}")
-            # Procesar el texto
-            神 = text
-            answer, function_args, function_response, function_name = LLM().process_response(text)
-            args_json = json.dumps(function_args, indent=2)
-            
-            try:
-                audio_url = addVoice(answer)
-            except Exception as e:
-                print(f"Error al generar audio: {str(e)}")
-                audio_url = None
+            answer = LLM().process_response(text)
+            audio_url = addVoice(answer)
             
             if answer:
-                xlr8 = f"{function_name}<br>{args_json}<br>{function_response}<br><br>"
-                functions_history.append(xlr8)
+                functions_history.append(answer)
             
             return jsonify({
                 'result': 'ok',
                 'text': answer,
-                '神': 神,
                 'file': audio_url,
                 'functions_history': functions_history
             })
@@ -70,7 +60,6 @@ def audio():
             
             try:
                 print("Subiendo audio a Cloudinary")
-                # Subir audio a Cloudinary
                 result = cloudinary.uploader.upload(
                     audio,
                     resource_type="raw",
@@ -81,14 +70,8 @@ def audio():
                 if not transcription:
                     return jsonify({'error': 'No se pudo transcribir el audio'}), 500
                 
-                answer, function_args, function_response, function_name = LLM().process_response(transcription)
-                args_json = json.dumps(function_args, indent=2)
-                
+                answer = LLM().process_response(transcription)
                 audio_url = addVoice(answer)
-                
-                if answer:
-                    xlr8 = f"{function_name}<br>{args_json}<br>{function_response}<br><br>"
-                    functions_history.append(xlr8)
                 
                 return jsonify({
                     'result': 'ok',
@@ -111,7 +94,6 @@ def transcribe_audio():
         if not audio:
             return jsonify({'error': 'No se recibió archivo de audio'}), 400
         
-        # Subir audio a Cloudinary
         result = cloudinary.uploader.upload(
             audio,
             resource_type="raw",
@@ -138,14 +120,11 @@ def process_text():
         if not text:
             return jsonify({'error': 'No se recibió texto'}), 400
         
-        answer, function_args, function_response, function_name = LLM().process_response(text)
-        args_json = json.dumps(function_args, indent=2)
-        
+        answer = LLM().process_response(text)
         audio_url = addVoice(answer)
         
         if answer:
-            xlr8 = f"{function_name}<br>{args_json}<br>{function_response}<br><br>"
-            functions_history.append(xlr8)
+            functions_history.append(answer)
         
         return jsonify({
             'result': 'ok',

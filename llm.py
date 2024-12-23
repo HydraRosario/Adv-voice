@@ -1,6 +1,5 @@
 import json
 from groq import Groq
-from tools import get_weather
 from dotenv import load_dotenv
 import os
 
@@ -10,12 +9,14 @@ load_dotenv()
 class LLM():
     def __init__(self):
         pass
+
     def process_response(self, text):
         client = Groq(
-                    api_key=os.getenv('GROQ_API_KEY')
-                )
-        MODEL = 'llama3-groq-70b-8192-tool-use-preview'
-        messages=[
+            api_key=os.getenv('GROQ_API_KEY')
+        )
+        #MODEL = 'llama3-groq-70b-8192-tool-use-preview'
+        MODEL = 'llama-3.3-70b-specdec'
+        messages = [
             {
                 "role": "system",
                 "content": '''Eres un asistente virtual adventista que responde preguntas relacionadas con la fe y doctrina de la Iglesia Adventista del Séptimo Día con base en la Biblia y los escritos de Elena G. White. Mantén siempre un tono amable, respetuoso y esperanzador.
@@ -42,68 +43,12 @@ No asumas que todas las preguntas son espirituales.'''
                 "content": text,
             }
         ]
-        tools = [
-            {
-                "type": "function",
-                "function": {
-                    "name": "get_weather",
-                    "description": "Obtener el clima de un lugar específico",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "location": {
-                                "type": "string",
-                                "description": "location debe ser una ciudad",
-                            }
-                        },
-                        "required": ["location"],
-                    },
-                },
-            }
-        ]
+
         response = client.chat.completions.create(
             model=MODEL,
             messages=messages,
-            tools=tools,
-            tool_choice="auto",
             max_tokens=4096
         )
 
-        response_message = response.choices[0].message
-        messages.append(response_message)
-        if not response_message.tool_calls:
-            answer = response_message.content
-            function_args = ''
-            function_response = ''
-            function_name = ''
-            return answer, function_args, function_response, function_name
-        else:
-            tool_calls = response_message.tool_calls
-            if tool_calls:
-                available_functions = {
-                    "get_weather": get_weather
-                }
-                messages.append(response_message)
-                for tool_call in tool_calls:
-                    function_name = tool_call.function.name
-                    function_to_call = available_functions[function_name]
-                    function_args = json.loads(tool_call.function.arguments)
-
-                    if function_name == 'get_weather':
-                        function_response = function_to_call(
-                            location=function_args.get("location"),
-                        )
-                    messages.append(
-                        {
-                            "tool_call_id": tool_call.id,
-                            "role": "tool",
-                            "name": function_name,
-                            "content": function_response,
-                        }
-                    )
-                second_response = client.chat.completions.create(
-                    model=MODEL,
-                    messages=messages
-                )
-                answer = second_response.choices[0].message.content
-                return answer, function_args, function_response, function_name
+        answer = response.choices[0].message.content
+        return answer

@@ -105,17 +105,3 @@ def addVoice(text):
     except Exception as e:
         print(f"Error en la conversión de texto a voz: {str(e)}")
         return None
-
-#Obtener el clima de una ciudad
-def get_weather(location):
-    try:
-        url = f"http://wttr.in/{location}?format=%C+%t"
-        response = requests.get(url)
-        if response.status_code == 200:
-            clima = response.text.strip()
-            print(clima)
-            return f"{clima} - traduce ésto al español y di la temperatura en grados centígrados, no devuelvas el °C"
-        else:
-            return "No se pudo obtener el clima."
-    except Exception as e:
-        print(f"Error al obtener el clima: {str(e)}")

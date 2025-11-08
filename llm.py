@@ -15,7 +15,7 @@ class LLM():
             api_key=os.getenv('GROQ_API_KEY')
         )
         #MODEL = 'llama3-groq-70b-8192-tool-use-preview'
-        MODEL = 'llama-3.3-70b-specdec'
+        MODEL = 'llama-3.3-70b-versatile'
         messages = [
             {
                 "role": "system",

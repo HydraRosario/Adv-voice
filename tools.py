@@ -19,6 +19,11 @@ cloudinary.config(
   api_secret = os.getenv('CLOUDINARY_API_SECRET')
 )
 
+# Verificar que las variables de entorno necesarias para Cloudinary estén presentes
+missing_cloudinary_env = [k for k in ('CLOUDINARY_CLOUD_NAME','CLOUDINARY_API_KEY','CLOUDINARY_API_SECRET') if not os.getenv(k)]
+if missing_cloudinary_env:
+        print(f"Advertencia: faltan variables de entorno de Cloudinary: {missing_cloudinary_env}. Las subidas a Cloudinary fallarán hasta que las configures.")
+
 #Transcribir audio del usuario a texto
 def transcriber(audio_url):
     client = Groq(
@@ -80,6 +85,10 @@ def addVoice(text):
                 await communicate.save(temp_path)
                 
                 # Subir a Cloudinary
+                # Validar configuración de Cloudinary antes de intentar subir
+                if not (os.getenv('CLOUDINARY_CLOUD_NAME') and os.getenv('CLOUDINARY_API_KEY') and os.getenv('CLOUDINARY_API_SECRET')):
+                    raise Exception("Cloudinary no está configurado: establece CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET en las variables de entorno.")
+
                 result = cloudinary.uploader.upload(
                     temp_path,
                     resource_type="raw",

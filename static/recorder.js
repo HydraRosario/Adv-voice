@@ -70,85 +70,56 @@ class AudioChat {
 
     async sendAudio(blob) {
         const fd = new FormData();
-        fd.append("audio", blob, "audio");
+        fd.append("audio", blob, "audio.webm");
         
+        this.addMessage("🎤 Grabación enviada...", true);
+
         try {
-            const transcriptionResponse = await fetch('/transcribe_audio', {
+            const response = await fetch('/audio', {
                 method: "POST",
                 body: fd
             });
-            
-            const transcriptionData = await transcriptionResponse.json();
-            
-            if (transcriptionData.transcription) {
-                this.addMessage(transcriptionData.transcription, true);
+
+            const data = await response.json();
+
+            // Asumimos que el mensaje de "transcripción" ahora es parte de la respuesta del chat.
+            // Lo mostramos como mensaje de usuario si es necesario, o lo ignoramos si la UI/UX final no lo requiere.
+            if (data.transcription) {
+                // Opcional: Reemplazar el mensaje "Grabación enviada..." con la transcripción real.
+                const messages = this.getMessagesContainer().querySelectorAll('.user-chat');
+                messages[messages.length - 1].textContent = `"${data.transcription}"`;
             }
             
-            const modelResponse = await fetch('/process_text', {
-                method: "POST",
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ text: transcriptionData.transcription })
-            });
-            
-            const modelData = await modelResponse.json();
-            
-            if (modelData.text) {
-                this.addMessage(modelData.text, false);
+            if (data.text) {
+                this.addMessage(data.text, false);
             }
             
-            if (modelData.file) {
-                await this.playAudio(modelData.file);
+            if (data.file) {
+                this.playAudio(data.file); // No es necesario 'await' aquí
             }
-            
-            document.getElementById("record").style.display = "";
-            document.getElementById("stop").style.display = "none";
+
         } catch (error) {
             console.error('Error:', error);
             this.addMessage('⚠️ Error al procesar el audio', false);
-            
+        } finally {
             document.getElementById("record").style.display = "";
             document.getElementById("stop").style.display = "none";
         }
     }
 
-    async playAudio(url) {
-        this.audioQueue.push(url);
-        if (!this.isPlaying) {
-            this.processAudioQueue();
-        }
-    }
-
-    async processAudioQueue() {
-        if (this.audioQueue.length === 0) {
-            this.isPlaying = false;
-            return;
-        }
-
-        this.isPlaying = true;
-        const url = this.audioQueue.shift();
-        
+    playAudio(url) {
         try {
-            const audio = new Audio();
-            audio.src = url;
-            
-            await audio.play();
-            await new Promise(resolve => {
-                audio.onended = resolve;
-            });
-            
-            this.processAudioQueue();
+            const audio = new Audio(url);
+            audio.play().catch(e => console.error("Error al reproducir audio:", e));
         } catch (error) {
-            console.error('Error reproduciendo audio:', error);
-            this.processAudioQueue();
+            console.error('Error creando o reproduciendo el audio:', error);
         }
     }
 
     addMessage(text, isUser = false) {
         if (!text) return;
         
-        const container = document.querySelector('.messages-container');
+        const container = this.getMessagesContainer();
         if (!container) {
             console.error('No se pudo encontrar el contenedor de mensajes');
             return;

@@ -1,112 +1,135 @@
+// --- Configuración de Firebase ---
+const firebaseConfig = {
+  apiKey: "AIzaSyCRjSumxmtDn1rmn6LeUy4DpwknqTpBMGA",
+  authDomain: "adv-voice-9b5d9.firebaseapp.com",
+  projectId: "adv-voice-9b5d9",
+  storageBucket: "adv-voice-9b5d9.firebasestorage.app",
+  messagingSenderId: "487180827799",
+  appId: "1:487180827799:web:f26a7b0d428f5d33a9fdd2",
+  measurementId: "G-LZKVN5BNMV"
+};
+
+// Inicializar Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const provider = new firebase.auth.GoogleAuthProvider();
+
+// --- Clase del Chat ---
 class AudioChat {
     constructor() {
         this.blobs = [];
         this.stream = null;
         this.rec = null;
-        this.isPlaying = false;
-        this.audioQueue = [];
+        this.messagesContainer = document.querySelector('.messages-container');
+        this.userToken = null; // Para almacenar el token de ID de Firebase
     }
 
     getMessagesContainer() {
-        if (!this.messagesContainer) {
-            this.messagesContainer = document.querySelector('.messages-container');
-        }
         return this.messagesContainer;
     }
 
+    // --- Métodos de grabación ---
     async record() {
         const recordButton = document.getElementById("record");
         const stopButton = document.getElementById("stop");
         
-        if (recordButton) {
-            recordButton.disabled = true;
-            recordButton.style.cursor = 'wait';
+        recordButton.disabled = true;
+        recordButton.style.cursor = 'wait';
+
+        try {
+            this.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+            const recorder = new MediaRecorder(this.stream);
+            this.rec = recorder;
+            this.blobs = [];
+            
+            recorder.ondataavailable = (e) => this.blobs.push(e.data);
+            
+            recorder.onstop = () => {
+                const blob = new Blob(this.blobs, { type: 'audio/webm' });
+                this.sendAudio(blob);
+                this.stream.getTracks().forEach(track => track.stop());
+            };
+            
+            recordButton.style.display = "none";
+            stopButton.style.display = "";
+            recorder.start();
+        } catch (error) {
+            console.error('Error de grabación:', error);
+            this.addMessage(`⚠️ ${error.message}`, false);
+            recordButton.disabled = false;
+            recordButton.style.cursor = 'pointer';
         }
-
-        requestAnimationFrame(async () => {
-            try {
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    throw new Error('Tu navegador no soporta la grabación de audio');
-                }
-
-                this.stream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        sampleRate: 44100
-                    },
-                    video: false 
-                });
-                
-                const recorder = new MediaRecorder(this.stream);
-                this.rec = recorder;
-                this.blobs = [];
-                
-                recorder.ondataavailable = (e) => {
-                    this.blobs.push(e.data);
-                };
-                
-                recorder.onstop = async () => {
-                    const blob = new Blob(this.blobs, { type: 'audio/webm' });
-                    await this.sendAudio(blob);
-                    this.stream.getTracks().forEach(track => track.stop());
-                };
-                
-                if (recordButton) recordButton.style.display = "none";
-                if (stopButton) stopButton.style.display = "";
-                
-                recorder.start();
-            } catch (error) {
-                console.error('Error:', error);
-                this.addMessage(`⚠️ ${error.message}`, false);
-            } finally {
-                if (recordButton) {
-                    recordButton.disabled = false;
-                    recordButton.style.cursor = 'pointer';
-                }
-            }
-        });
     }
 
+    // --- Métodos de comunicación con el Backend ---
     async sendAudio(blob) {
+        if (!this.userToken) {
+            this.addMessage('⚠️ Error de autenticación. Por favor, inicia sesión de nuevo.', false);
+            return;
+        }
+
         const fd = new FormData();
         fd.append("audio", blob, "audio.webm");
-        
-        this.addMessage("🎤 Grabación enviada...", true);
+        this.addMessage("🎤 Grabación enviada, procesando...", true);
 
         try {
             const response = await fetch('/audio', {
                 method: "POST",
+                headers: { 'Authorization': `Bearer ${this.userToken}` },
                 body: fd
             });
 
+            if (!response.ok) throw new Error(`Error del servidor: ${response.statusText}`);
+            
             const data = await response.json();
-
-            // Asumimos que el mensaje de "transcripción" ahora es parte de la respuesta del chat.
-            // Lo mostramos como mensaje de usuario si es necesario, o lo ignoramos si la UI/UX final no lo requiere.
+            
             if (data.transcription) {
-                // Opcional: Reemplazar el mensaje "Grabación enviada..." con la transcripción real.
                 const messages = this.getMessagesContainer().querySelectorAll('.user-chat');
                 messages[messages.length - 1].textContent = `"${data.transcription}"`;
             }
-            
-            if (data.text) {
-                this.addMessage(data.text, false);
-            }
-            
-            if (data.file) {
-                this.playAudio(data.file); // No es necesario 'await' aquí
-            }
+            if (data.text) this.addMessage(data.text, false);
+            if (data.file) this.playAudio(data.file);
 
         } catch (error) {
             console.error('Error:', error);
-            this.addMessage('⚠️ Error al procesar el audio', false);
+            this.addMessage(`⚠️ ${error.message}`, false);
         } finally {
             document.getElementById("record").style.display = "";
             document.getElementById("stop").style.display = "none";
         }
     }
 
+    async sendText(text) {
+        if (!text.trim() || !this.userToken) {
+            this.addMessage('⚠️ Error de autenticación. Por favor, inicia sesión de nuevo.', false);
+            return;
+        }
+        
+        this.addMessage(text, true);
+        
+        try {
+            const response = await fetch('/audio', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.userToken}`
+                },
+                body: JSON.stringify({ text })
+            });
+            
+            if (!response.ok) throw new Error(`Error del servidor: ${response.statusText}`);
+
+            const data = await response.json();
+            if (data.text) this.addMessage(data.text, false);
+            if (data.file) this.playAudio(data.file);
+
+        } catch (error) {
+            console.error('Error detallado:', error);
+            this.addMessage(`⚠️ ${error.message}`, false);
+        }
+    }
+
+    // --- Métodos de UI y Audio ---
     playAudio(url) {
         try {
             const audio = new Audio(url);
@@ -118,130 +141,81 @@ class AudioChat {
 
     addMessage(text, isUser = false) {
         if (!text) return;
-        
         const container = this.getMessagesContainer();
-        if (!container) {
-            console.error('No se pudo encontrar el contenedor de mensajes');
-            return;
-        }
+        if (!container) return;
 
-        try {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `chat-box ${isUser ? 'user-chat' : 'assistant-chat'}`;
-            messageDiv.textContent = text;
-            container.appendChild(messageDiv);
-            
-            setTimeout(() => {
-                messageDiv.scrollIntoView({ behavior: 'smooth' });
-            }, 100);
-        } catch (error) {
-            console.error('Error al agregar mensaje:', error);
-        }
-    }
-
-    async sendText(text) {
-        if (!text.trim()) return;
-        
-        try {
-            this.addMessage(text, true);
-            
-            const response = await fetch('/audio', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'Origin': window.location.origin
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify({ text })
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            
-            if (data.text) {
-                this.addMessage(data.text, false);
-            }
-            
-            if (data.file) {
-                await this.playAudio(data.file);
-            }
-        } catch (error) {
-            console.error('Error detallado:', error);
-            this.addMessage('⚠️ Error al procesar el mensaje', false);
-        }
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-box ${isUser ? 'user-chat' : 'assistant-chat'}`;
+        messageDiv.textContent = text;
+        container.appendChild(messageDiv);
+        container.scrollTop = container.scrollHeight;
     }
 }
 
+// --- Lógica de Autenticación y Control ---
 let chat = null;
 
-function initChat() {
-    try {
-        chat = new AudioChat();
+function handleAuthStateChange(user) {
+    const authContainer = document.getElementById('auth-container');
+    const chatContainer = document.getElementById('chat-container');
+    const userInfo = document.getElementById('user-info');
+
+    if (user) {
+        // Usuario ha iniciado sesión
+        authContainer.style.display = 'none';
+        chatContainer.style.display = 'block';
+        userInfo.textContent = `Hola, ${user.displayName}`;
         
-        const textInput = document.querySelector('#textInput');
-        if (textInput) {
-            textInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    sendText();
-                }
-            });
-        }
-    } catch (error) {
-        console.error('Error al inicializar el chat:', error);
+        user.getIdToken().then(token => {
+            if (!chat) chat = new AudioChat();
+            chat.userToken = token;
+        });
+
+    } else {
+        // Usuario ha cerrado sesión
+        authContainer.style.display = 'block';
+        chatContainer.style.display = 'none';
+        userInfo.textContent = '';
+        if (chat) chat.userToken = null;
     }
 }
 
-document.addEventListener('DOMContentLoaded', initChat);
+document.addEventListener('DOMContentLoaded', () => {
+    // Escuchar cambios en el estado de autenticación
+    auth.onAuthStateChanged(handleAuthStateChange);
 
-function sendText() {
-    if (!chat) return;
-    
-    const textInput = document.querySelector('#textInput');
-    const sendButton = document.querySelector('.send-button');
-    
-    if (sendButton) sendButton.disabled = true;
-    
-    try {
-        if (textInput?.value?.trim()) {
-            const text = textInput.value;
-            textInput.value = '';
-            chat.sendText(text);
+    // Asignar eventos a los botones
+    document.getElementById('login-button').addEventListener('click', () => {
+        auth.signInWithPopup(provider).catch(error => console.error("Error en inicio de sesión:", error));
+    });
+
+    document.getElementById('logout-button').addEventListener('click', () => {
+        auth.signOut();
+    });
+
+    document.querySelector('#textInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            sendText();
         }
-    } finally {
-        if (sendButton) sendButton.disabled = false;
+    });
+});
+
+// --- Funciones Globales para los botones del HTML ---
+function sendText() {
+    const textInput = document.querySelector('#textInput');
+    if (chat && textInput?.value?.trim()) {
+        chat.sendText(textInput.value);
+        textInput.value = '';
     }
 }
 
 function record() {
-    if (!chat) {
-        console.error('Chat no inicializado');
-        return;
-    }
-    chat.record();
+    if (chat) chat.record();
 }
 
 function stop() {
-    if (!chat) return;
-    
-    const recordButton = document.getElementById("record");
-    const stopButton = document.getElementById("stop");
-    
-    if (stopButton) stopButton.disabled = true;
-    
-    try {
-        if (chat.rec?.state === "recording") {
-            chat.rec.stop();
-        }
-    } finally {
-        if (recordButton) recordButton.style.display = "";
-        if (stopButton) {
-            stopButton.style.display = "none";
-            stopButton.disabled = false;
-        }
+    if (chat && chat.rec?.state === "recording") {
+        chat.rec.stop();
     }
 }

@@ -156,16 +156,24 @@ class AudioChat {
 let chat = null;
 
 function handleAuthStateChange(user) {
-    const authContainer = document.getElementById('auth-container');
+    const loginContainer = document.getElementById('login-container');
+    const sessionContainer = document.getElementById('session-container');
     const chatContainer = document.getElementById('chat-container');
     const userInfo = document.getElementById('user-info');
+    const adminControls = document.getElementById('admin-controls');
 
     if (user) {
         // Usuario ha iniciado sesión
-        authContainer.style.display = 'none';
+        loginContainer.style.display = 'none';
+        sessionContainer.style.display = 'flex'; // Usar flex para alinear correctamente
         chatContainer.style.display = 'block';
         userInfo.textContent = `Hola, ${user.displayName}`;
         
+        // Mostrar controles de admin si el email coincide
+        if (user.email === 'hidramusic@gmail.com') {
+            adminControls.style.display = 'block';
+        }
+
         user.getIdToken().then(token => {
             if (!chat) chat = new AudioChat();
             chat.userToken = token;
@@ -173,12 +181,45 @@ function handleAuthStateChange(user) {
 
     } else {
         // Usuario ha cerrado sesión
-        authContainer.style.display = 'block';
+        loginContainer.style.display = 'block';
+        sessionContainer.style.display = 'none';
         chatContainer.style.display = 'none';
         userInfo.textContent = '';
+        if (adminControls) adminControls.style.display = 'none'; // Ocultar si cierra sesión
         if (chat) chat.userToken = null;
     }
 }
+
+// Nueva función para enviar el modo al backend
+async function setAssistantMode(mode) {
+    if (!chat || !chat.userToken) return;
+
+    try {
+        const response = await fetch('/set_mode', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${chat.userToken}`
+            },
+            body: JSON.stringify({ mode: mode })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error al cambiar el modo');
+        }
+
+        const data = await response.json();
+        console.log('Modo cambiado a:', data.mode);
+        // Opcional: mostrar una pequeña notificación de éxito
+        chat.addMessage(`🤖 Modo cambiado a ${data.mode}`, false);
+
+    } catch (error) {
+        console.error('Error al establecer el modo:', error);
+        chat.addMessage(`⚠️ ${error.message}`, false);
+    }
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
     // Escuchar cambios en el estado de autenticación
@@ -192,6 +233,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('logout-button').addEventListener('click', () => {
         auth.signOut();
     });
+
+    // Evento para el selector de modo
+    const modeSelector = document.getElementById('mode-selector');
+    if (modeSelector) {
+        modeSelector.addEventListener('change', (e) => {
+            setAssistantMode(e.target.value);
+        });
+    }
 
     document.querySelector('#textInput').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {

@@ -1,6 +1,6 @@
 import json
 import os
-from flask import Flask, render_template, request, jsonify, make_response, g
+from flask import Flask, render_template, request, jsonify, make_response, g, session
 from functools import wraps
 from tools import transcriber, addVoice
 from llm import LLM
@@ -10,6 +10,7 @@ import firebase_admin
 from firebase_admin import credentials, auth
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)  # Clave secreta para sesiones
 CORS(app)
 
 # Inicializar Firebase Admin SDK
@@ -52,6 +53,25 @@ def token_required(f):
 def index():
     return render_template("recorder.html")
 
+@app.route("/set_mode", methods=["POST"])
+@token_required
+def set_mode():
+    try:
+        data = request.get_json()
+        mode = data.get('mode')
+        if mode in ['Adventista', 'Anticristo']:
+            session['assistant_mode'] = mode
+            # Solo el admin puede cambiar a 'Anticristo'
+            if mode == 'Anticristo':
+                user_email = g.user.get('email')
+                if user_email != 'hidramusic@gmail.com':
+                    return jsonify({"error": "No autorizado"}), 403
+            return jsonify({"status": "success", "mode": mode})
+        return jsonify({"error": "Modo no válido"}), 400
+    except Exception as e:
+        print(f"Error en set_mode: {str(e)}")
+        return jsonify({'error': 'Error interno del servidor'}), 500
+
 @app.route("/audio", methods=["POST", "OPTIONS"])
 @token_required
 def audio():
@@ -63,8 +83,15 @@ def audio():
         return response
 
     try:
-        # El UID del usuario está disponible a través de g.user['uid']
-        print(f"Solicitud del usuario: {g.user['uid']}")
+        # Obtener el modo de la sesión, con 'Adventista' como valor por defecto
+        assistant_mode = session.get('assistant_mode', 'Adventista')
+        user_email = g.user.get('email')
+
+        # Doble verificación: solo el admin puede usar el modo 'Anticristo'
+        if assistant_mode == 'Anticristo' and user_email != 'hidramusic@gmail.com':
+            assistant_mode = 'Adventista' # Revertir a Adventista si no es admin
+
+        print(f"Usuario: {user_email}, Modo: {assistant_mode}")
 
         if request.is_json:
             data = request.get_json()
@@ -72,7 +99,7 @@ def audio():
             if not text:
                 return jsonify({'error': 'No se recibió texto'}), 400
             
-            answer = LLM().process_response(text)
+            answer = LLM().process_response(text, mode=assistant_mode)
             audio_url = addVoice(answer)
             
             if answer:
@@ -99,7 +126,7 @@ def audio():
             if not transcription:
                 return jsonify({'error': 'No se pudo transcribir el audio'}), 500
             
-            answer = LLM().process_response(transcription)
+            answer = LLM().process_response(transcription, mode=assistant_mode)
             audio_url = addVoice(answer)
             
             return jsonify({

@@ -11,25 +11,37 @@
   </head>
   <body>
     <main class="container main-container">
+        <!-- Sección de Autenticación (Movida a la parte superior) -->
+        <div id="auth-section" class="auth-section">
+            <!-- Contenedor para cuando el usuario NO ha iniciado sesión -->
+            <div id="login-container" class="text-center p-2">
+                <button id="login-button" class="btn btn-custom">Iniciar Sesión con Google</button>
+            </div>
+            <!-- Contenedor para cuando el usuario SÍ ha iniciado sesión (inicialmente oculto) -->
+            <div id="session-container" class="d-flex justify-content-center align-items-center p-2" style="display: none;">
+                <span id="user-info" class="me-3"></span>
+                
+                <!-- Controles de Administrador (ocultos por defecto) -->
+                <div id="admin-controls" style="display: none;" class="me-3">
+                    <label for="mode-selector" class="me-2">Modo:</label>
+                    <select id="mode-selector" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                        <option value="Adventista" selected>Adventista</option>
+                        <option value="Anticristo">Anticristo</option>
+                    </select>
+                </div>
+
+                <button id="logout-button" class="btn btn-sm btn-custom-outline">Cerrar Sesión</button>
+            </div>
+        </div>
+
         <div class="header">
             <img src="static/img/logo-adventista.png" alt="Logo Adventista" class="logo">
             <h1>Asistente Bíblico Digital</h1>
             <p class="verse">"Lámpara es a mis pies tu palabra, y lumbrera a mi camino" - Salmos 119:105</p>
         </div>
 
-        <!-- Sección de Autenticación -->
-        <div id="auth-container" class="text-center p-3">
-            <p>Por favor, inicia sesión para comenzar.</p>
-            <button id="login-button" class="btn btn-primary">Iniciar Sesión con Google</button>
-        </div>
-
         <!-- Contenedor principal del chat (inicialmente oculto) -->
         <div id="chat-container" style="display: none;">
-            <div class="d-flex justify-content-end align-items-center p-2">
-                <span id="user-info" class="me-3"></span>
-                <button id="logout-button" class="btn btn-sm btn-outline-secondary">Cerrar Sesión</button>
-            </div>
-
             <div class="chat-section">
                 <div class="messages-container">
                 </div>

@@ -25,3 +25,4 @@ chroma_db/
 *.wav
 
 .vercel
+firebase-credentials.json

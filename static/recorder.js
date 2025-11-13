@@ -60,6 +60,7 @@ function handleAuthStateChange(user) {
     const chatContainer = document.getElementById('chat-container');
     const userInfo = document.getElementById('user-info');
     const adminControls = document.getElementById('admin-controls');
+    const logoutButton = document.getElementById('logout-button'); // Obtener el botón de cerrar sesión directamente
 
     if (user) {
         // Usuario ha iniciado sesión
@@ -67,10 +68,13 @@ function handleAuthStateChange(user) {
         sessionContainer.style.display = 'flex'; // Usar flex para alinear correctamente
         chatContainer.style.display = 'block';
         userInfo.textContent = `Hola, ${user.displayName}`;
+        logoutButton.style.display = 'block'; // Asegurar que el botón de cerrar sesión sea visible cuando se inicia sesión
         
         // Mostrar controles de admin si el email coincide
         if (user.email === 'hidramusic@gmail.com') {
             adminControls.style.display = 'block';
+        } else {
+            adminControls.style.display = 'none'; // Ocultar controles de admin para usuarios no administradores
         }
 
         user.getIdToken().then(token => {
@@ -84,6 +88,7 @@ function handleAuthStateChange(user) {
         sessionContainer.style.display = 'none';
         chatContainer.style.display = 'none';
         userInfo.textContent = '';
+        logoutButton.style.display = 'none'; // Ocultar explícitamente el botón de cerrar sesión cuando se cierra la sesión
         if (adminControls) adminControls.style.display = 'none'; // Ocultar si cierra sesión
         if (chat) chat.userToken = null;
     }

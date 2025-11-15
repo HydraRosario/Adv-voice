@@ -10,59 +10,68 @@
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600&display=swap" rel="stylesheet">
   </head>
   <body>
-    <main class="container main-container">
-        <!-- Sección de Autenticación (Movida a la parte superior) -->
-        <div id="auth-section" class="auth-section">
-            <!-- Contenedor para cuando el usuario NO ha iniciado sesión -->
-            <div id="login-container" class="text-center p-2">
-                <button id="login-button" class="btn btn-custom">Iniciar Sesión con Google</button>
+    <div class="sidebar-toggle" id="sidebarToggle">
+        <div class="hamburger"></div>
+        <div class="hamburger"></div>
+        <div class="hamburger"></div>
+    </div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-menu-items">
+            <img src="https://via.placeholder.com/50/CCCCCC/FFFFFF?text=User" alt="User Avatar" class="user-avatar" id="sidebarUserAvatar" style="display: none;">
+            <div id="login-container" class="sidebar-menu-item">
+                <button id="login-button" class="sidebar-button transparent-text" title="Iniciar Sesión con Google">Iniciar</button>
             </div>
-            <!-- Contenedor para cuando el usuario SÍ ha iniciado sesión (inicialmente oculto) -->
-            <div id="session-container" class="d-flex justify-content-center align-items-center p-2" style="display: none;">
-                <span id="user-info" class="me-3"></span>
-                
+            <div id="session-container" class="sidebar-menu-item" style="display: none;">
                 <!-- Controles de Administrador (ocultos por defecto) -->
-                <div id="admin-controls" style="display: none;" class="me-3">
-                    <label for="mode-selector" class="me-2">Modo:</label>
-                    <select id="mode-selector" class="form-select form-select-sm" style="width: auto; display: inline-block;">
-                        <option value="Adventista" selected>Adventista</option>
-                        <option value="Anticristo">Anticristo</option>
-                    </select>
+                <div id="admin-controls" style="display: none;" class="sidebar-admin-controls">
+                    <button id="modeToggleButton" class="sidebar-button" title="Cambiar Modo">😈</button>
                 </div>
-
-                <button id="logout-button" class="btn btn-sm btn-custom-outline">Cerrar Sesión</button>
+                <button class="sidebar-button" id="sidebarSettingsButton" title="Configuración">⚙️</button>
+                <button class="sidebar-button" id="sidebarHelpButton" title="Ayuda">❓</button>
+                <button class="sidebar-button" id="sidebarLogoutButton" title="Cerrar Sesión">🚪</button>
             </div>
         </div>
+    </aside>
 
-        <div class="header">
-            <img src="static/img/logo-adventista.png" alt="Logo Adventista" class="logo">
-            <h1>Asistente Bíblico Digital</h1>
-            <p class="verse">"Lámpara es a mis pies tu palabra, y lumbrera a mi camino" - Salmos 119:105</p>
-        </div>
+    <div class="content-wrapper">
+        <main class="container main-container">
 
-        <!-- Contenedor principal del chat (inicialmente oculto) -->
-        <div id="chat-container" style="display: none;">
-            <div class="chat-section">
-                <div class="messages-container">
-                </div>
+            <div class="header">
+                <img src="static/img/logo-adventista.png" alt="Logo Adventista" class="logo">
+                <h1>Asistente Bíblico Digital</h1>
+                <p class="verse">"Lámpara es a mis pies tu palabra, y lumbrera a mi camino" - Salmos 119:105</p>
             </div>
 
-            <div class="input-section">
-                <div class="input-container">
-                    <input type="text" class="form-control message-input" id="textInput" placeholder="Escribe tu pregunta aquí..." aria-label="Campo de texto para escribir mensaje">
-                    <button class="send-button" onclick="sendText()" aria-label="Enviar mensaje" title="Enviar mensaje">
-                        ➤
-                    </button>
-                    <button type="button" class="record-button" id="record" onclick="record()" aria-label="Iniciar grabación de audio" title="Grabar audio">
-                        🎤
-                    </button>
-                    <button type="button" class="stop-button" id="stop" onclick="stop()" style="display:none" aria-label="Detener grabación" title="Detener grabación">
-                        ⏹️
-                    </button>
+            <div id="login-message" class="login-message" style="display: none;">
+                <p>Inicia sesión en Google para comenzar</p>
+            </div>
+
+            <!-- Contenedor principal del chat (siempre visible) -->
+            <div id="chat-container">
+                <div class="chat-section">
+                    <div class="messages-container">
+                    </div>
                 </div>
             </div>
+        </main>
+
+        <div class="input-section">
+            <div class="input-container">
+                <input type="text" class="form-control message-input" id="textInput" placeholder="Escribe tu pregunta aquí..." aria-label="Campo de texto para escribir mensaje">
+                <button class="send-button" onclick="sendText()" aria-label="Enviar mensaje" title="Enviar mensaje">
+                    ➤
+                </button>
+                <button type="button" class="record-button" id="record" onclick="record()" aria-label="Iniciar grabación de audio" title="Grabar audio">
+                    🎤
+                </button>
+                <button type="button" class="stop-button" id="stop" onclick="stop()" style="display:none" aria-label="Detener grabación" title="Detener grabación">
+                    ⏹️
+                </button>
+            </div>
         </div>
-    </main>
+        <div id="login-overlay" class="login-overlay" style="display: none;"></div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     

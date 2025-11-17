@@ -237,7 +237,6 @@ function handleAuthStateChange(user) {
         // Usuario ha iniciado sesión
         loginContainer.style.display = 'none';
         sessionContainer.style.display = 'flex';
-        chatContainer.style.display = 'block';
         loginOverlay.style.display = 'none'; // Hide overlay
         loginMessage.style.display = 'none'; // Hide login message
 
@@ -276,7 +275,6 @@ function handleAuthStateChange(user) {
         // Usuario ha cerrado sesión
         loginContainer.style.display = 'flex'; // Show login button
         sessionContainer.style.display = 'none';
-        chatContainer.style.display = 'block'; // Chat container is always visible
         loginOverlay.style.display = 'block'; // Show overlay
         loginMessage.style.display = 'block'; // Show login message
         if (adminControls) adminControls.style.display = 'none';

@@ -224,6 +224,7 @@ body.sidebar-open .main-container {
     background: rgba(255, 255, 255, 0.9);
     border-radius: 15px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    height: 100%; /* Ensure it takes full height of its flex parent */
 }
 
 .messages-container {
@@ -397,7 +398,11 @@ body.sidebar-open .input-section {
     background: var(--primary-color);
 }
 
-/* Additional styles from the original code */
+#chat-container {
+    flex-grow: 1; /* Allow chat container to take available space */
+    display: flex;
+    flex-direction: column;
+}
 .section {
     border: 2px solid #ff9999;
 }
@@ -441,16 +446,7 @@ h1, h2 {
     width: 30px;
 }
 
-.chat-container {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    width: 100%;
-    max-height: 100%;
-    overflow-y: auto;
-    padding-right: 10px;
-    scrollbar-width: thin;
-}
+
 
 .function-box {
     max-width: 80%;
